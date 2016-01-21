@@ -1,18 +1,4 @@
 -------------------------
-AlfIBasecaller.pl
--------------------------
-
-Counts the number of alleles detected at each position in the specified set
-of mapped short reads (output from SHRiMP prettyprint).
-Output:	 A table listing the number of calls at each position, with the positions
-	corresponding to the recognition site (AlfI) excluded.
-Usage:	 usage: AlfIBasecaller.pl reference shrimp.out min_coverage
-Arguments:
-	 reference 	 the reference sequences, a fasta file 
-	 shrimp.out 	 the output from SHRiMP (gmapper -> probcalc -> prettyprint)
-	 min_coverage 	 positions with lower coverage are ignored
-
--------------------------
 AlfIExtract.pl
 -------------------------
 
@@ -25,15 +11,22 @@ Arguments:
 	 output		 a fasta file containing the extracted sites 
 
 -------------------------
-BuildCDR.pl
+BuildRef.pl
 -------------------------
 
-Builds a cluster derived reference (CDR) from 2bRAD libraries sequenced on Illumina
-Output:	 fasta-formatted nucleotide sequence file for use as a reference
-Usage:	 BuildCDR.pl seq.file qual.file
-Arguments:
-	 seq.file	 nucleotide reads, fasta format (aim for 10-20 million reads)
-	 qual.file	 quality scores for those reads
+------------------------------------------------------------
+BuildRef.pl
+Builds a reference for de novo analysis of 2bRAD sequences from samples
+lacking a sequenced genome. Attempts to reconstruct the set of loci
+(recognition sites) represented in a collection of raw 2bRAD sequences.
+Usage: BuildRef.pl input.fasta input.qual output.fasta 
+Where:
+	input.fasta:	10-20 million truncated, high-quality reads from a
+			representative subset of the samples
+	input.qual:	quality scores for the input reads
+	output.fasta:	a name for the output file, which will serve as a 
+			reference for mapping and genotyping
+------------------------------------------------------------
 
 -------------------------
 CombineGenotypes.pl
@@ -58,24 +51,6 @@ Usage: EvalFrags.pl input.fasta
 Where:
 	input.fasta:	a collection of 36-bp sequences (FASTA)
 ------------------------------------------------------------
-
--------------------------
-GmapperFilter.pl
--------------------------
-
-Filters alignments produced by SHRiMP's gmapper and probcalc to exclude
-weak or short, partial matches based on user specified criteria.
-Ambiguous mapping is evaluated at the level of sequences in your reference.
-If a read matches two sequences equally well, that read is discarded.
-
-Usage: GmapperFilter.pl input_alignments min_matching min_align output_alignments output_counts
-Where: input_alignments:	input file, the output from gmapper -> probcalc.
-	min_matching:		Minimum number of matching bases required in each alignment.
-	min_align:		Minimum length of each alignment required.
-	output_alignments:	A name for the output file containing all alignments passing the above criteria.
-	(This file is further processed for 2bRAD genotyping)
-	output_counts:		A name for the output file documenting coverage for each reference sequence.
-	(This file is used for RNASeq gene expression analysis)
 
 -------------------------
 gt2bayes.pl
@@ -188,6 +163,30 @@ Where:
  		print_option: 	y = print genotypes and summary, n = only summary
 
 -------------------------
+NFGenotyper.pl
+-------------------------
+
+Determines genotypes from nucleotide frequencies based on user defined frequency thresholds.
+Usage: NFGenotyper.pl input max_MAF_homo min_MAF_hetero min_cov
+Where:	input:		Input file, tab delimited text file of nucleotide frequencies (output from AlfIBasecaller.pl)
+	max_MAF_homo:	Loci at which the minor allele frequency (MAF) is below this threshold will be called
+			homozygous for the major allele (i.e. the minor allele is considered seuqencing error and ignored).
+	min_MAF_hetero:	Loci at which MAF exceeds this frequency will be called heterozygous for the two observed alleles.
+			(Note: loci with MAF between these two thresholds will be called "unknown" and not reported).
+	min_cov:	Minimum coverage required to determine genotypes. Lower coverage loci wil be discarded.
+
+-------------------------
+OneSNPPerTag.pl
+-------------------------
+
+Selects a single SNP from each tag in a 2bRAD genotype matrix to minimize missing data.
+Usage: OneSNPPerTag.pl input print_option
+Where:
+		input: 		genotypes matrix where rows=loci and columns=samples.
+				row 1 = column label, column 1 = tag, column 2 = position
+ 		print_option: 	y = print genotypes and summary, n = only summary
+
+-------------------------
 PolyFilter.pl
 -------------------------
 
@@ -201,19 +200,6 @@ Where:
  		print_option: 	y = print genotypes and summary, n = only summary
 
 -------------------------
-RADGenotyper.pl
--------------------------
-
-Determines genotypes from nucleotide frequencies based on user defined frequency thresholds.
-Usage: RADGenotyper.pl input max_MAF_homo min_MAF_hetero min_cov
-Where:	input:		Input file, tab delimited text file of nucleotide frequencies (output from AlfIBasecaller.pl)
-	max_MAF_homo:	Loci at which the minor allele frequency (MAF) is below this threshold will be called
-			homozygous for the major allele (i.e. the minor allele is considered seuqencing error and ignored).
-	min_MAF_hetero:	Loci at which MAF exceeds this frequency will be called heterozygous for the two observed alleles.
-			(Note: loci with MAF between these two thresholds will be called "unknown" and not reported).
-	min_cov:	Minimum coverage required to determine genotypes. Lower coverage loci wil be discarded.
-
--------------------------
 RepTagFilter.pl
 -------------------------
 
@@ -224,4 +210,32 @@ Where:
 				row 1 = column label, column 1 = tag, column 2 = position
 		max_snps: 	tags containing more than this number of SNPs will be excluded
  		print_option: 	y = print genotypes and summary, n = only summary
+
+-------------------------
+SAMBasecaller.pl
+-------------------------
+
+Counts nucleotide frequencies at each locus in a 2bRAD sequence data set.
+Usage: SAMBasecaller.pl input.sam reference.fasta cov_threshold output.tab
+Where:
+	input.sam:		input alignments, SAM format
+	reference.fasta:	reference used to generate the input alignments, FASTA format
+	cov_threshold:		loci with lower coverage are discarded
+	output.tab:		a name for the output file (tab delimited text)
+
+-------------------------
+SamFilter.pl
+-------------------------
+
+Filters the output from mapping short reads against a reference,
+excluding short, weak, and ambiguous matches.
+NOTE: make sure you've chosen settings for your mapper that output multiple
+alignments for reads that match multiple reference sequences, because this is
+required to test for ambiguous matches.
+Usage:	SamFilter.pl input.sam min_matching min_aligned output.sam counts.tab
+	input.sam: 	Output from any short read mapper, SAM format.
+	min_matching: 	Minimum number of matching bases.
+	min_aligned: 	Minimum length of aligned region (bp).
+	output.sam: 	Name for output file containing alignments passing this filter, SAM format.
+	counts.tab: 	Name for the count output (reads per gene), tab delimited text.
 
