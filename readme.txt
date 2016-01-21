@@ -15,6 +15,8 @@ other software packages or modules installed and in your path:
 BioPerl			http://www.bioperl.org/wiki/Main_Page
 SHRiMP			http://compbio.cs.toronto.edu/shrimp/
 cross_match.manyreads	http://www.phrap.org/phredphrapconsed.html
+CD-HIT			http://weizhongli-lab.org/cd-hit/
+RAxML			http://sco.h-its.org/exelixis/web/software/raxml/cluster.html
 
 The usage information for each script (usage.txt) can be reproduced by running each script without arguments.
 
