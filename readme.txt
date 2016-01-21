@@ -1,4 +1,4 @@
-##############################################
+----------------------------------------------
 2bRAD analysis pipeline version 2.0
 This version includes modifications developed in 2015-2016:
 	> Improved descrimination between similar loci in de novo reference building, using a ML tree approach
@@ -7,8 +7,7 @@ This version includes modifications developed in 2015-2016:
 Currently this version should be considered BETA. 
 I make no guarantees about its accuracy, although its behaved well in my tests so far.
 Please test it on real biological datasets and help me improve it by reporting any bugs you find!
-eli.meyer@oregonstate.edu
-##############################################
+----------------------------------------------
 
 This repository contains a series of scripts used for our standard 2bRAD analysis pipeline.
 You'll also need the "sequence utilities" and "sequence processing" repositories, and several 
