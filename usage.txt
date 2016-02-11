@@ -11,6 +11,22 @@ Arguments:
 	 output		 a fasta file containing the extracted sites 
 
 -------------------------
+AlleleFilter.pl
+-------------------------
+
+------------------------------------------------------------
+AlleleFilter.pl
+Excludes loci containing too many alleles
+Usage: AlleleFilter.pl input max_alleles print_option
+Where:
+                input:          genotypes matrix where rows=loci and columns=samples.
+                                row 1 = column label, column 1 = tag, column 2 = position
+                max_alleles:    loci with more than this number of alleles are excluded
+                print_option:   y = print genotypes and summary, n = only summary
+
+------------------------------------------------------------
+
+-------------------------
 BuildRef.pl
 -------------------------
 
