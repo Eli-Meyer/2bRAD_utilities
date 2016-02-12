@@ -2,13 +2,15 @@
 AlfIExtract.pl
 -------------------------
 
-Counts the number of occurences of the AlfI recognition site
-or sequence motif in a set of DNA sequences.
-Output:	 a fasta file of those sites, named by position.
-Usage:	 AlfIExtract.pl sequences output
-Arguments:
-	 sequences	 a fasta file containing the sequences to be searched 
-	 output		 a fasta file containing the extracted sites 
+------------------------------------------------------------
+AlfIExtract.pl
+Counts and extracts AlfI restriction fragments from a set of DNA sequences.
+Output:  a fasta file of those sites, named by position.
+Usage:   AlfIExtract.pl sequences output
+Where:
+         sequences      a fasta file containing the sequences to be searched
+         output         a fasta file of those sites
+------------------------------------------------------------
 
 -------------------------
 AlleleFilter.pl
@@ -24,6 +26,34 @@ Where:
                 max_alleles:    loci with more than this number of alleles are excluded
                 print_option:   y = print genotypes and summary, n = only summary
 
+------------------------------------------------------------
+
+-------------------------
+BcgIExtract.pl
+-------------------------
+
+------------------------------------------------------------
+BcgIExtract.pl
+Counts and extracts BcgI restriction fragments from a set of DNA sequences.
+Output:  a fasta file of those sites, named by position.
+Usage:   BcgIExtract.pl sequences output
+Where:
+         sequences      a fasta file containing the sequences to be searched
+         output         a fasta file of those sites
+------------------------------------------------------------
+
+-------------------------
+BsaXIExtract.pl
+-------------------------
+
+------------------------------------------------------------
+BsaXIExtract.pl
+Counts and extracts BsaXI restriction fragments from a set of DNA sequences.
+Output:  a fasta file of those sites, named by position.
+Usage:   BsaXIExtract.pl sequences output
+Where:
+         sequences      a fasta file containing the sequences to be searched
+         output  	a fasta file of those sites
 ------------------------------------------------------------
 
 -------------------------
