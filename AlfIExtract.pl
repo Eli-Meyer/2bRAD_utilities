@@ -36,7 +36,7 @@ while(<SEQ>)
 		{
 		if ($ss ne "")
 			{
-			while($ss =~ /(?=$patt)/g) 
+			while($ss =~ /(?=$patt)/ig) 
 				{
 				$loci = pos($ss)+$size;
 				print OUT ">", $idi, "_", $loci-$size+1, "_", $loci, "_F\n";
@@ -55,7 +55,7 @@ while(<SEQ>)
 	}
 if ($ss ne "")
 	{
-	while($ss =~ /(?=$patt)/g) 
+	while($ss =~ /(?=$patt)/ig) 
 		{
 				$loci = pos($ss)+$size;
 				print OUT ">", $idi, "_", $loci-$size+1, "_", $loci, "_F\n";
