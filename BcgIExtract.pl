@@ -18,7 +18,7 @@ my $seqfile = $ARGV[0];
 open(SEQ, $seqfile);
 
 $patt = ".{10}CGA.{6}TGC.{12}";
-$rcpatt = ".{12}GCT.{5}ACG.{10}";
+$rcpatt = ".{12}GCA.{6}TCG.{10}";
 $size = 36;
 
 print "Forward sequence of recognition site: ", $patt, "\n";
