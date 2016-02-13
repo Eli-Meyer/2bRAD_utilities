@@ -1,21 +1,19 @@
 #!/usr/bin/perl
 # written by E Meyer, eli.meyer@science.oregonstate.edu
 # distributed without any guarantees or restrictions
-use Bio::SeqIO;
 
+# -- check arguments and print usage statement
 $scriptname=$0; $scriptname =~ s/.+\///g;
+$usage = <<USAGE;
+Counts and extracts AlfI restriction fragments from a set of DNA sequences.
+Output:  a fasta file of those sites, named by position.
+Usage:   $scriptname sequences output
+Where:
+         sequences      a fasta file containing the sequences to be searched
+         output         a fasta file of those sites
+USAGE
+if ($#ARGV != 1 || $ARGV[0] eq "-h") {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
 
-# -- program description and required arguments
-unless ($#ARGV == 1)
-        {print "\nCounts the number of occurences of the AlfI recognition site\n";
-	print "or sequence motif in a set of DNA sequences.\n";
-        print "Output:\t a fasta file of those sites, named by position.\n";
-        print "Usage:\t $scriptname sequences output\n";
-        print "Arguments:\n";
-        print "\t sequences\t a fasta file containing the sequences to be searched \n";
-        print "\t output\t\t a fasta file containing the extracted sites \n";
-        print "\n"; exit;
-        }
 my $seqfile = $ARGV[0];
 open(SEQ, $seqfile);
 $patt = ".{12}GCA.{6}TGC.{12}";
@@ -67,4 +65,5 @@ if ($ss ne "")
 
 print $nseqs, " sequences searched\n";
 print $found, " recognition sites found altogether\n";
+
 

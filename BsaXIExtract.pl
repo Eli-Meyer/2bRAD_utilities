@@ -5,21 +5,21 @@
 # -- check arguments and print usage statement
 $scriptname=$0; $scriptname =~ s/.+\///g;
 $usage = <<USAGE;
-Counts and extracts BcgI restriction fragments from a set of DNA sequences.
+Counts and extracts BsaXI restriction fragments from a set of DNA sequences.
 Output:  a fasta file of those sites, named by position.
 Usage:   $scriptname sequences output
 Where:
          sequences      a fasta file containing the sequences to be searched
-         output         a fasta file of those sites
+         output  	a fasta file of those sites
 USAGE
 if ($#ARGV != 1 || $ARGV[0] eq "-h") {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
 
 my $seqfile = $ARGV[0];
 open(SEQ, $seqfile);
 
-$patt = ".{10}CGA.{6}TGC.{12}";
-$rcpatt = ".{12}GCA.{6}TCG.{10}";
-$size = 36;
+$patt = ".{12}AC.{5}CTCC.{10}";
+$rcpatt = ".{10}GGAG.{5}GT.{12}";
+$size = 33;
 
 print "Forward sequence of recognition site: ", $patt, "\n";
 print "Reverse compliment sequence of recognition site: ", $rcpatt, "\n";
@@ -85,4 +85,5 @@ if ($ss ne "")
 
 print $nseqs, " sequences searched\n";
 print $found, " recognition sites found altogether\n";
+
 
