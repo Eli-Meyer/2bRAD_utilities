@@ -11,8 +11,8 @@ Where:  input:  	tab-delimited genotype matrix, with rows=loci and columns=sampl
                 	First two columns indicate tag and position respectively.
                 	This format is the output from RADGenotyper.pl.
 	reference:	Complete path to the reference file used to generate these genotypes (FASTA). 
-	filters:	(OPTIONAL) a text file described filters applied to the genotypes, as (code	description). e.g.
-			md	removed any loci genotyped in fewer than 20 samples
+	filters:	(OPTIONAL) a text file described filters applied to the genotypes, as:
+				(code	description). e.g.	"MD	removed loci genotyped in <20 samples"
         output: a name for the output file. VCF format.
 USAGE
 if ($#ARGV < 0 || $ARGV[0] eq "-h") {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
@@ -49,7 +49,7 @@ if (defined($ffile))
 # FORMAT lines
 print "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n";
 
-print "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\t";
+print "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t";
 
 while(<IN>)
 	{
@@ -68,10 +68,10 @@ while(<IN>)
 	print $cols[0], "\t", $cols[1], "\t", ".", "\t";
 
 # identify and print reference allele
-	$refstr = `grep $cols[0] -A 1 -m 1 $rfile | grep -v ">"`;
-	@refa = split("",$refstr);
-	$refcall = $refa[$cols[1]-1];
-	print $refcall, "\t";
+	$refstr = `grep $cols[0] -A 1 -m 2 $rfile | grep -v ">" | grep -v "-"`;
+	@refa = split(//,$refstr);
+	$refcall = @refa[$cols[1]-1];
+#	print $refcall, "\t";
 	
 # identify and print a list of all alternate alleles
 	%aah = (); $gtni = 0;
@@ -82,7 +82,20 @@ while(<IN>)
 		foreach $i (@ai) {unless ($i eq 0 || $i eq $refa[$cols[1]-1]) {$aah{$i}++;}}
 		}
 	@aaa = sort(keys(%aah));
-	print join(",", @aaa), "\t";
+	$naa = @aaa;
+	if ($naa eq 0) {push @aaa, ".";}
+	if ($refcall eq "N")
+		{
+		$refcall = $aaa[0];
+		print $refcall, "\t";
+		shift @aaa;
+		print join(",", @aaa), "\t";
+		}
+	else
+		{
+		print $refcall, "\t";
+		print join(",", @aaa), "\t";
+		}
 # make a hash of alleles
 	%ach = (); $allno = 0;
 	$ach{$refcall} = 0;
@@ -125,3 +138,4 @@ while(<IN>)
 		}
 	print "\n";
 	}
+
