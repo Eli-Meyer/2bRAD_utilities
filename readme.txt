@@ -128,6 +128,25 @@ Where:	input:	tab-delimited genotype matrix, with rows=loci and columns=samples.
 	output:	a name for the output file. COLONY input format.
 
 -------------------------
+gt2dadi.pl
+-------------------------
+
+------------------------------------------------------------
+gt2dadi.pl
+Converts a SNP matrix (produced from NFGenotyper.pl) into the format required by
+the software DADI, described at: https://bitbucket.org/gutenkunstlab/dadi/wiki/DataFormats
+Usage: gt2dadi.pl input key reference output
+Where:
+	input:		name of the input file (tab-delimited text)
+	key:		a tab-delimited text file associating each sample in the input
+			with a population label. Alleles will be counted and reported
+			by the population labels assigned in this file. Formated as:
+			Sample_name	Population_name
+	reference:	Name of the reference file from which these SNPs were called (FASTA format)
+	out:		a name for the output file. Tab delimited text in DADI format.
+------------------------------------------------------------
+
+-------------------------
 gt2fas.pl
 -------------------------
 
@@ -214,8 +233,8 @@ Where:  input:  	tab-delimited genotype matrix, with rows=loci and columns=sampl
                 	First two columns indicate tag and position respectively.
                 	This format is the output from RADGenotyper.pl.
 	reference:	Complete path to the reference file used to generate these genotypes (FASTA). 
-	filters:	(OPTIONAL) a text file described filters applied to the genotypes, as (code	description). e.g.
-			md	removed any loci genotyped in fewer than 20 samples
+	filters:	(OPTIONAL) a text file described filters applied to the genotypes, as:
+				(code	description). e.g.	"MD	removed loci genotyped in <20 samples"
         output: a name for the output file. VCF format.
 ------------------------------------------------------------
 
