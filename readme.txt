@@ -85,6 +85,22 @@ Arguments:
 	 output_file		 a name for the output file
 
 -------------------------
+CombineMAFs.pl
+-------------------------
+
+------------------------------------------------------------
+CombineMAFs.pl
+Extracts minor allele frequencies for each input file, and combines these into
+a single output with columns 1=tag, 2=position, 3=major allele, 4=minor allele, 
+5-n=one column per sample, showing minor allele frequency at each locus.
+Missing data are shown as "NA".
+Usage: CombineMAFs.pl file_1 file_2 ... file_n > output_file
+Where:
+	files 1-n:	nucleotide frequencies (output from SAMBasecaller.pl) for each sample
+	output_file:	a name for the output; tab-delimited text
+------------------------------------------------------------
+
+-------------------------
 EvalFrags.pl
 -------------------------
 
@@ -261,6 +277,25 @@ Where:
 				row 1 = column label, column 1 = tag, column 2 = position
 		min_data: 	loci that were genotyped in fewer samples than this will be excluded
  		print_option: 	y = print genotypes and summary, n = only summary
+
+-------------------------
+MinMAFFilter.pl
+-------------------------
+
+------------------------------------------------------------
+MinMAFFilter.pl
+Excludes loci that are monomorphic in all samples, or loci where the alternate
+allele was never present in any sample above a user specified minimum allele frequency.
+Usage: MinMAFFilter.pl input min_maf print_option
+Where:
+                input:          matrix of allele frequencies from CombineMAFs.pl, where
+                                row 1 = column label, column 1 = tag, column 2 = position, 
+				column 3 = major allele, column 4 = minor allele, 
+				columns 5 - n: frequency of the alternate allele in each sample
+                min_maf:    	loci where minor allele was never present at a greater allele frequency than this will be excluded
+                print_option:   y = print data and summary, n = only summary
+
+------------------------------------------------------------
 
 -------------------------
 NFGenotyper.pl
