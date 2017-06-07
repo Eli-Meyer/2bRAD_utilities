@@ -75,6 +75,32 @@ Where:
 ------------------------------------------------------------
 
 -------------------------
+CombineAlleCounts.pl
+-------------------------
+
+------------------------------------------------------------
+CombineAlleCounts.pl
+Counts the number of times each allele was observed, for each locus, in a collection of 
+2bRAD data describing nucleotide frequencies for each locus and sample (the output from
+SAMBasecaller.pl). 
+
+This script identifies major and minor alleles across samples, and combines these
+into a single file containing two columns for each sample (number of times, major allele
+was observed, number of times minor allele was observed). 
+
+Output format: columns 1=tag, 2=position, 3=major allele, 4=minor allele,
+5=major allele counts for sample A, 6=minor allele counts for sample A, etc.
+
+Missing data are shown as "NA" for both alleles, and the minor allele is reported as 
+"NA" for monomorphic loci.
+
+Usage: CombineAlleCounts.pl file_1 file_2 ... file_n > output_file
+Where:
+	files 1-n:	nucleotide frequencies (output from SAMBasecaller.pl) for each sample
+	output_file:	a name for the output; tab-delimited text
+------------------------------------------------------------
+
+-------------------------
 CombineGenotypes.pl
 -------------------------
 
