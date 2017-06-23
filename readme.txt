@@ -281,6 +281,23 @@ Where:  input:  	tab-delimited genotype matrix, with rows=loci and columns=sampl
 ------------------------------------------------------------
 
 -------------------------
+LowcovSampleFilter_counts.pl
+-------------------------
+
+------------------------------------------------------------
+LowcovSampleFilter_counts.pl
+Excludes samples with too much missing data (genotypes called at too few loci)
+Usage: LowcovSampleFilter_counts.pl input min_data print_option
+Where:
+                input:          allele counts matrix where rows=loci and columns=samples.
+                                row 1 = column label, column 1 = tag, column 2 = position
+                                column 3 = reference allele, column 4 = alternate allele
+				subsequent pairs of columns contain allele counts (reference then alternate) for each sample
+                min_data:       samples in which fewer loci than specified here were called will be excluded
+                print_option:   y = print allele counts and summary, n = only summary
+------------------------------------------------------------
+
+-------------------------
 LowcovSampleFilter.pl
 -------------------------
 
@@ -291,6 +308,23 @@ Where:
 				row 1 = column label, column 1 = tag, column 2 = position
 		min_data: 	samples in which fewer loci than specified here were genotyped will be excluded
  		print_option: 	y = print genotypes and summary, n = only summary
+
+-------------------------
+MDFilter_counts.pl
+-------------------------
+
+------------------------------------------------------------
+MDFilter_counts.pl
+Excludes loci containing too many missing data (genotyped in too few samples)
+Usage: MDFilter_counts.pl input min_data print_option
+Where:
+                input:          allele counts matrix where rows=loci and columns=samples.
+                                row 1 = column label, column 1 = tag, column 2 = position
+                                column 3 = reference allele, column 4 = alternate allele
+                                subsequent pairs of columns contain allele counts (major then minor) for each sample
+                min_data:       loci that were genotyped in fewer samples than this will be excluded
+                print_option:   y = print genotypes and summary, n = only summary
+------------------------------------------------------------
 
 -------------------------
 MDFilter.pl
@@ -337,6 +371,20 @@ Where:	input:		Input file, tab delimited text file of nucleotide frequencies (ou
 	min_cov:	Minimum coverage required to determine genotypes. Lower coverage loci wil be discarded.
 
 -------------------------
+OneSNPPerTag_counts.pl
+-------------------------
+
+------------------------------------------------------------
+OneSNPPerTag_counts.pl
+Selects a single SNP from each tag in a 2bRAD genotype matrix to minimize missing data.
+Usage: OneSNPPerTag_counts.pl input print_option
+Where:
+                input:          genotypes matrix where rows=loci and columns=samples.
+                                row 1 = column label, column 1 = tag, column 2 = position
+                print_option:   y = print genotypes and summary, n = only summary
+------------------------------------------------------------
+
+-------------------------
 OneSNPPerTag.pl
 -------------------------
 
@@ -346,6 +394,25 @@ Where:
 		input: 		genotypes matrix where rows=loci and columns=samples.
 				row 1 = column label, column 1 = tag, column 2 = position
  		print_option: 	y = print genotypes and summary, n = only summary
+
+-------------------------
+PolyFilter_counts.pl
+-------------------------
+
+------------------------------------------------------------
+PolyFilter_counts.pl
+Excludes monomorphic loci and loci where an alternate allele was observed
+in too few samples to be useful. 
+Note that this script counts alleles, not genotypes.
+Usage: PolyFilter_counts.pl input min_alt min_freq print_option
+Where:
+                input:          genotypes matrix where rows=loci and columns=samples.
+                                row 1 = column label, column 1 = tag, column 2 = position, 
+				column 3 = reference allele, column 4 = alternate allele
+                min_alt:	alternate allele must be detected at least this many times in a sample to count as present
+		min_freq:	alternate allele must be present in at least this number of samples to pass the filter
+                print_option:   y = print genotypes and summary, n = only summary
+------------------------------------------------------------
 
 -------------------------
 PolyFilter.pl
