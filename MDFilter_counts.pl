@@ -13,7 +13,7 @@ Where:
                                 column 3 = reference allele, column 4 = alternate allele
                                 subsequent pairs of columns contain allele counts (major then minor) for each sample
                 min_data:       loci that were genotyped in fewer samples than this will be excluded
-                print_option:   y = print genotypes and summary, n = only summary
+                print_option:   y = print allele counts and summary, n = only summary
 USAGE
 if ($#ARGV != 2 || $ARGV[0] eq "-h") {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
 

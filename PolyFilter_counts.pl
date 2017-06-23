@@ -15,7 +15,7 @@ Where:
 				column 3 = reference allele, column 4 = alternate allele
                 min_alt:	alternate allele must be detected at least this many times in a sample to count as present
 		min_freq:	alternate allele must be present in at least this number of samples to pass the filter
-                print_option:   y = print genotypes and summary, n = only summary
+                print_option:   y = print allele counts and summary, n = only summary
 USAGE
 if ($#ARGV != 3 || $ARGV[0] eq "-h") {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
 

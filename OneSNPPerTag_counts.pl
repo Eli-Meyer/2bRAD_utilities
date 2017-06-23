@@ -8,9 +8,11 @@ $usage = <<USAGE;
 Selects a single SNP from each tag in a 2bRAD genotype matrix to minimize missing data.
 Usage: OneSNPPerTag_counts.pl input print_option
 Where:
-                input:          genotypes matrix where rows=loci and columns=samples.
+                input:          allele counts matrix where rows=loci and columns=samples.
                                 row 1 = column label, column 1 = tag, column 2 = position
-                print_option:   y = print genotypes and summary, n = only summary
+                                column 3 = reference allele, column 4 = alternate allele
+                                subsequent pairs of columns contain allele counts (major then minor) for each sample
+                print_option:   y = print allele counts and summary, n = only summary
 USAGE
 if ($#ARGV != 1 || $ARGV[0] eq "-h") {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
 
