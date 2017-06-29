@@ -32,7 +32,10 @@ my $maxthird = 2;
 print "Tag\tLocus\tMajor\tMinor\t";
 foreach $argi (0..$#ARGV)
 	{
-	print $ARGV[$argi], "\t";
+	$tmpname = $ARGV[$argi];
+	$tmpname =~ s/\/[a-zA-Z0-9_]+\.tab//;
+	$tmpname =~ s/.+\///g;
+	print $tmpname.".maj", "\t", $tmpname.".min", "\t";
 	print STDERR "reading ", $ARGV[$argi], "\n";
 	open(TAB, $ARGV[$argi]);
 	$rownum = 0;
@@ -78,3 +81,4 @@ foreach $r (sort(keys(%bigh)))
 		print "\n";
 		}
 	}
+exit;
