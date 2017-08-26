@@ -211,6 +211,9 @@ Where:	input:	tab-delimited genotype matrix, with rows=loci and columns=samples.
 	output:	a name for the output file. FSTAT format.
 
 -------------------------
+gt2maf.pl
+-------------------------
+-------------------------
 gt2phy.pl
 -------------------------
 
@@ -220,6 +223,17 @@ Where:	input:	tab-delimited genotype matrix, with rows=loci and columns=samples.
 		First two columns indicate tag and position respectively.
 		This format is the output from RADGenotyper.pl.
 	output:	a name for the output file. PHYLIP alignment format.
+
+-------------------------
+gt2related.pl
+-------------------------
+
+Converts a genotype matrix (loci x samples) into the appropriate input format for the R package related.
+Usage: gt2related.pl input > output
+Where:	input:	tab-delimited genotype matrix, with rows=loci and columns=samples.
+		First two columns indicate tag and position respectively.
+		This format is the output from RADGenotyper.pl.
+	output:	a name for the output file. RELATED input format.
 
 -------------------------
 gt2remlf90.pl
@@ -237,6 +251,25 @@ Where	input:	SNP matrix produced from CombineGenotypes.pl
 		e.g.
 		sample0   02221022511020101020
 		sample100 12221222221222200010
+------------------------------------------------------------
+
+-------------------------
+gt2Rqtl.pl
+-------------------------
+
+------------------------------------------------------------
+gt2Rqtl.pl
+Converts a 2bRAD genotype matrix into the csv input format required by R/qtl.
+Usage: gt2Rqtl.pl snps traits output
+Where:
+	snps:		tab-delimited genotype matrix (columns=samples, rows=loci) 
+			produced by RADGenotyper.pl or NFGenotyper.pl
+	traits:		tab-delimited file of data on  traits
+			arranged as sample/trait1/..traitN
+			note that sample names must match column headers in snps file
+	map:		tab-delimited file of map positions as
+			marker/LG/position
+	output: 	a name for the csv formatted output file.
 ------------------------------------------------------------
 
 -------------------------
