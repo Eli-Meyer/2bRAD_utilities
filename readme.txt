@@ -75,11 +75,11 @@ Where:
 ------------------------------------------------------------
 
 -------------------------
-CombineAlleCounts.pl
+CombineAlleleCounts.pl
 -------------------------
 
 ------------------------------------------------------------
-CombineAlleCounts.pl
+CombineAlleleCounts.pl
 Counts the number of times each allele was observed, for each locus, in a collection of 
 2bRAD data describing nucleotide frequencies for each locus and sample (the output from
 SAMBasecaller.pl). 
@@ -94,7 +94,7 @@ Output format: columns 1=tag, 2=position, 3=major allele, 4=minor allele,
 Missing data are shown as "NA" for both alleles, and the minor allele is reported as 
 "NA" for monomorphic loci.
 
-Usage: CombineAlleCounts.pl file_1 file_2 ... file_n > output_file
+Usage: CombineAlleleCounts.pl file_1 file_2 ... file_n > output_file
 Where:
 	files 1-n:	nucleotide frequencies (output from SAMBasecaller.pl) for each sample
 	output_file:	a name for the output; tab-delimited text

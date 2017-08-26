@@ -34,7 +34,7 @@ unless (defined(which($dep1))) {print $dep1, " not found. Exiting.\n"; exit;}
 $dep2 = "cd-hit-est";
 unless (defined(which($dep2))) {print $dep2, " not found. Exiting.\n"; exit;}
 
-# define variables
+# define variables. edit these if you understand the consequences.
 my $seqfile = $ARGV[0];	# name of the input sequence file (fasta format)
 my $qualfile = $ARGV[1];# name of the input quality score file (qual format)
 my $outfile = $ARGV[2];	# a name for the final output file (cluster derived reference to be used for mapping)
@@ -43,11 +43,36 @@ my $initc = 0.944;	# 0.944 = 2 bp distance for initial clustering of alleles and
 my $mincov = 2;		# min coverage needed in cluster to count a valid allele
 my $site = "\\w{12}GCA\\w{6}TGC\\w{12}";	# recognition site in Perl regexp
 my $qthd = 30;		# minimum allowed score; anything lower counts as low quality (LQ)
-my $maxlq = 2;		# maximum allowed number of LQ positions
+my $maxlq = 0;		# maximum allowed number of LQ positions
+my $ow_opt = 0;		# decide whether to overwrite existing files. 1 = force overwrite; 0 = use existing files
+my $minmems = 4;	# minimum number of sequences in a clade to consider tree building. Don't set below 4.
+my $maxmems = 100;	# maximum number of sequences in a clade to consider tree building.
 
-#print $site, "\n";
+# fix sequence name characters because raxmlHP is picky
+print "Checking input sequence names for \":\" characters...\n";
+$checkseq = `head -n 1 $seqfile | grep \"\:\" -m 1`;
+$checkqual = `head -n 1 $qualfile | grep \"\:\" -m 1`;
+print "Finished checking input files.\n";
+if (length($checkseq)>0) 
+	{
+	print "Found \":\" in $seqfile. Correcting...\n";
+	system("perl -pi -e \"s/\:/-/g\" $seqfile");
+	print "Finished.\n";
+	}
+if (length($checkqual)>0) 
+	{
+	print "Found \":\" in $qualfile. Correcting...\n";
+	system("perl -pi -e \"s/\:/-/g\" $qualfile");
+	print "Finished.\n";
+	}
+
+# -- counting input
+$inseq = `grep \">\" -c  $seqfile`;
+$inqual = `grep \">\" -c  $qualfile`;
+chomp($inseq); chomp($inqual);
 
 # -- screen for Ns in input reads
+print "Checking for Ns in input...\n";
 open(SF, $seqfile);
 while(<SF>)
 	{chomp;
@@ -56,36 +81,51 @@ while(<SF>)
 		if ($_ =~ /N/i)
 			{
 			$nhash{$name}++;
+			$withn++;
 			}
 		}
 	}
+print "Finished.\n";
 
-# -- stringently filter and truncate raw colorspace reads and scores
+# -- designate positions to exclude from quality filtering
+@excvec = qw{13 14 15 16 22 23 24};
+foreach $e (@excvec) {$exch{$e}++;}
+
+# -- stringently filter and truncate raw reads and scores
+if ($ow_opt eq 0)
+	{
+	if (-e "VHQ.qual" && -e "VHQ.fasta")
+		{
+		print "VHQ.fasta and VHQ.qual found. Using existing files...\n";
+		$outqual = `grep -c \">\" VHQ.qual`;
+		$outseq = `grep -c \">\" VHQ.fasta`;
+		chomp($outseq); chomp($outqual);
+		$nlq = $inseq - $outseq - $withn;
+		goto VHQ;
+		}
+	}
+print "Conducting stringent quality filtering...\n";
 my $nqual = $lqn = 0;
 open(QF, $qualfile);
 open(OQ, ">VHQ.qual");
 while(<QF>)
 	{chomp;
-	if ($_ =~ />/) {$name = $_; $name =~ s/>//; $name =~ s/\s+.*//; $inqual++; next;}
+	if ($_ =~ />/) {$name = $_; $name =~ s/>//; $name =~ s/\s+.*//; next;}
 	else	{@qa = split(" ", $_);
 		$lqn = 0; $poscount = 0;
 		foreach $q (@qa) 
 			{
 			$poscount++; 
-			if ($poscount == 13 || $poscount == 14 || $poscount == 15 || $poscount == 22 || $poscount == 23 || $poscount == 24)
-				{
-				next;
-				} 
+			if (exists($exch{$poscount})) {next;}
 			if ($q < $qthd) {$lqn++;} 
 			}
-		if (exists($nhash{$name})) {$nqual++; next;}
+		if (exists($nhash{$name})) {next;}
 		if ($lqn>$maxlq) {$nlq++; next;}
 		elsif ($lqn <= $maxlq)
 			{print OQ ">", $name, "\n";
 			print OQ join(" ", @qa), "\n";
 			$gh{$name}++;
 			$outqual++;
-#			print $name, "\n";
 			}
 		}
 	}
@@ -95,9 +135,8 @@ open(SF, $seqfile);
 open(OS, ">VHQ.fasta");
 while(<SF>)
 	{chomp;
-	if ($_ =~ />/) {$name = $_; $name =~ s/>//; $name =~ s/\s+.*//; $inseq++; next;}
+	if ($_ =~ />/) {$name = $_; $name =~ s/>//; $name =~ s/\s+.*//; next;}
 	else	{
-#		print $name, "\n";
 		if (exists($gh{$name})) 
 			{print OS ">", $name, "\n";
 			print OS $_, "\n";
@@ -107,25 +146,51 @@ while(<SF>)
 	}
 close(SF);
 close(OS);
+print "Finished quality filtering.\n";
+VHQ:					# end of quality filtering section. 	
+
 print $inseq, " sequences in.\n";
 print $inqual, " scores in.\n";
-print $nqual, " sequences with Ns excluded.\n";
+print $withn, " sequences with Ns excluded.\n";
 print $nlq, " low quality sequences excluded.\n";
 print $outseq, " sequences out.\n";
 print $outqual, " scores out.\n";
-print "Done filtering raw reads.\n";
 
 # -- Filter for perfect match to restriction site
+print "Filtering for perfect matches to restriction site...\n";
+if ($ow_opt eq 0)
+	{
+	if (-e "matches.fasta")
+		{
+		print "matches.fasta found. Using existing file...\n";
+		goto MATCHES;
+		}
+	}
 system("grep -P \"$site\" VHQ.fasta -B 1 > matches.fasta");
 system("perl -pi -e \"s/^--\n//g\" matches.fasta");
+MATCHES:				# end of restriction site filtering section
+
 print "Done filtering for site matches. Matches found:\n";
 system("grep '>' matches.fasta -c");
 
-# cluster reads at 1.0 and extract valid alleles based on depth
-print "Beginning process...\n";
+# -- this step identifies sequences observed repeatedly in the VHQ dataset
+# -- we call these "valid alleles"
+# -- cluster reads at 1.0 and extract valid alleles based on depth
+print "Beginning initial clustering step...\n";
+if ($ow_opt eq 0)
+	{
+	if (-e "va.clstr")
+		{
+		print "va.clstr found. Using existing file...\n";
+		goto CLSTR1;
+		}
+	}
 system("date");
 system("cd-hit-est -i matches.fasta -M 0 -d 0 -c 1 -o va >va.log");
-print "Finished with initial clustering. Parsing...\n";
+print "Finished with initial clustering.\n";
+CLSTR1:					# end of initial clustering section
+
+print "Parsing initial clusters...\n";
 open(IN, "va.clstr");
 while(<IN>)
 	{
@@ -145,14 +210,15 @@ while(<IN>)
 	}
 close(IN);
 
+# -- apply coverage filter to identify sequences identified more than $mincov times in the VHQ data
 foreach $c (sort(keys(%ch)))
 	{
 	if ($ch{$c}<$mincov)	{next;}
-#	print $c, "\t", $ch{$c}, "\n";	
 	$pass++;
 	$passh{$c}++;
 	}
 
+# -- identify representative sequences from valid clusters
 open(IN, "va.clstr");
 $status = 0;
 while(<IN>)
@@ -171,12 +237,12 @@ while(<IN>)
 		$repname =~ s/.*>//;
 		$repname =~ s/\..+//;
 		$reph{$repname}++;
-#		print $repname, "\n";
 		$status = 0;
 		}
 	}
 close(IN);
 
+# -- extract representative sequences from valid clusters
 open(IN,"va");
 open(OUT, ">filtered_va.fasta");
 $status = 0;
@@ -201,11 +267,21 @@ close(OUT);
 print "Finished parsing initial clusters. \n";
 print "Identified $pass putative alleles (sequences observed at least $mincov times).\n";
 system("date");
-print "Beginning second clustering...\n";
 
 # cluster valid alleles to identify groups of related alleles that may represent paralogs or alleles
+print "Beginning second clustering step...\n";
+if ($ow_opt eq 0)
+	{
+	if (-e "gra.clstr")
+		{
+		print "gra.clstr found. Using existing file...\n";
+		goto CLSTR2;
+		}
+	}
 system("cd-hit-est -i filtered_va.fasta -M 0 -d 0 -c $initc -o gra >gra.log");
-print "Finished clustering. Parsing cluster output...\n";
+print "Finished second clustering step.\n";
+CLSTR2:					# end of second clustering step
+print "Parsing cluster output...\n";
 
 # parse clusters to record cluster membership of each sequence
 open(IN, "gra.clstr");
@@ -230,31 +306,38 @@ while(<IN>)
 			$grareps{$cname} = $memname;
 			}
 		$grah{$cname}{$memname}++;
-#		print $memname, "\t", $cname, "\n";
 		}
 	}
 print "Finished parsing.\n";
 print $gra_c, " clusters (groups of related alleles) identified.\n";
 system("date");
 
+# -- build trees for each cluster in an effort to distinguish between paralogs and alleles
 print "Testing for clusters containing multiple loci...\n";
-# build trees for each cluster to distinguish between paralogs and alleles
 foreach $c (sort(keys(%grah)))
-	{
-#	print $c, "\n";
+	{			# count members in each cluster
 	%cih = %{$grah{$c}};
 	@cmems = sort(keys(%cih));
 	$ncmems = @cmems;
-#	print $ncmems, "\t", "@cmems", "\n";
-# if fewer than 4 alleles observed, not possible to use sequence relationships among
-# alleles to infer the number of loci in the cluster. Assign representative sequence
-# for those clusters
-	if ($ncmems < 4)
+# If fewer than 4 alleles were observed, it's not possible to use sequence relationships
+# among alleles to infer the number of loci in the cluster. 
+	if ($ncmems < $minmems)
 		{
 #		print $c, " not tested, too few sequences in the cluster.\n";
+# pick representative seq from this cluster and add it to reference as a single locus
 		$outh{$grareps{$c}}++;
 		if ($ncmems < 2) {$mono_loc++;}
 		else	{$poly_one++;}
+		next;
+		}
+# If more than the maximum number of sequences were observed, this indicates a highly 
+# repetitive cluster that we'd like to exclude because such loci will be error prone. 
+	if ($ncmems > $maxmems)
+		{
+#		print $c, " not tested, too many sequences in the cluster.\n";
+# pick representative seq from this cluster and add it to reference as a single locus
+		$outh{$grareps{$c}}++;
+		$poly_max++;
 		next;
 		}
 # extract sequences of all cluster members
@@ -298,32 +381,29 @@ foreach $c (sort(keys(%grah)))
 	%cladeh = %deph = %blenh = ();
 
 # build tree describing relationships among members of the cluster
+	RAXML:
 	system("raxmlHPC -s tmp.fasta -p 123 -m GTRCAT -n out.tree > ml.log");
-#	system("cat RAxML_bestTree.out.tree");
-#	system("cat RAxML_parsimonyTree.out.tree");
+	system("sleep 2");
 
 # parse tree to identify clades that differ by at least the critical 
 # minimum difference ($mindepth variable)
-	$treeobj = new Bio::TreeIO(-file=>"RAxML_bestTree.out.tree", -format=>"newick");
-	$tree = $treeobj->next_tree;
-	$rootnode = $tree->get_root_node;
+	if (-e "RAxML_bestTree.out.tree") 
+		{
+		$treeobj = new Bio::TreeIO(-file=>"RAxML_bestTree.out.tree", -format=>"newick");
+		$tree = $treeobj->next_tree;
+		$rootnode = $tree->get_root_node;
+		}
+	else	{
+		print "Tree not found. Re-building...\n";
+		goto RAXML;
+		}
 
 # store id, depth, and branch length for each node
 	foreach $node ($rootnode->get_all_Descendents)
 		{
 		if (defined($node->id))
 			{
-#			print $node->id, "\t";
 			@lineage = $tree->get_lineage_nodes($node);
-			foreach $l (@lineage)
-				{
-#				print $l->internal_id, "\t";
-				}
-#			print "\n";
-#			print $lineage[-1]->internal_id, "\t";
-#			print $lineage[-1]->height, "\t";
-#			print $lineage[-1]->branch_length, "\t";
-#			print $lineage[-1]->depth, "\n";
 			$cladeh{$lineage[-1]->internal_id}{$node->id}++;
 			$deph{$lineage[-1]->internal_id} = $lineage[-1]->depth;
 			$blenh{$lineage[-1]->internal_id} = $lineage[-1]->branch_length;
@@ -331,7 +411,6 @@ foreach $c (sort(keys(%grah)))
 		}
 
 # identify number of loci in each cluster and representative sequence for each locus
-#	print "Clade\tRepresentative\n";
 	%tmpfateh = ();
 	foreach $tclade (sort(keys(%cladeh)))
 		{
@@ -344,7 +423,6 @@ foreach $c (sort(keys(%grah)))
 			{
 			$outh{$tha[0]}++;
 			$tmpfateh{$tclade}++;
-#			print $tclade, "\t", $tha[0], "\t", $ntha, "\t", "@tha", "\n";
 			}	
 # store a representative of each clade judged to be sufficiently different to
 # represent a seperate locus
