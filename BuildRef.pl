@@ -383,7 +383,6 @@ foreach $c (sort(keys(%grah)))
 		if ($found >= $ncmems) {last;}
 		}
 	close(SEQ); close(TMP);
-#	system("cat tmp.fasta");
 
 # tree building code here
 # prepare for tree building
@@ -391,9 +390,12 @@ foreach $c (sort(keys(%grah)))
 	%cladeh = %deph = %blenh = ();
 
 # build tree describing relationships among members of the cluster
-	RAXML:
+#	RAXML:
+	$nseqs = `grep -c \">\" tmp.fasta`;
+	chomp($nseqs);
+	if ($nseqs ne 0) 
+	{
 	system("raxmlHPC -s tmp.fasta -p 123 -m GTRCAT -n out.tree > ml.log");
-	system("sleep 1");
 
 # parse tree to identify clades that differ by at least the critical 
 # minimum difference ($mindepth variable)
@@ -404,10 +406,10 @@ foreach $c (sort(keys(%grah)))
 		$rootnode = $tree->get_root_node;
 		}
 	else	{
-		$contents = `cat tmp.fasta`;
-		print STDERR "Tree not found. Re-building...\n";
-		print STDERR $contents, "\n";
-		goto RAXML;
+#		print STDERR "Tree not found. Re-building...\n";
+#		$coni = `cat tmp.fasta`;
+#		print STDERR $coni, "\n";
+#		goto RAXML;
 		}
 
 # store id, depth, and branch length for each node
@@ -460,11 +462,13 @@ foreach $c (sort(keys(%grah)))
 		print STDERR " left as a single locus.\n";
 		}
 	}
+	}
+
 
 print "Finished tree analysis.\n";
 system("date");
 print $mono_loc, " singleton clusters\n";
-print $poly_one, " clusters made of two few sequences to build useful trees\n";
+print $poly_one, " clusters made of too few sequences to build useful trees\n";
 print $c4tree, " cluster with sufficient diversity to build trees\n";
 print $remainsingle, " clusters remained as individual loci after tree analysis\n";
 print $splitclust, " clusters were split into two or more loci\n";
