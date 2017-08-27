@@ -40,7 +40,7 @@ my $qualfile = $ARGV[1];# name of the input quality score file (qual format)
 my $outfile = $ARGV[2];	# a name for the final output file (cluster derived reference to be used for mapping)
 my $mindepth = 0.028;	# min branch length and depth to select clades. 0.028 corresponds to 1 bp distance
 my $initc = 0.944;	# 0.944 = 2 bp distance for initial clustering of alleles and paralogs
-my $mincov = 2;		# min coverage needed in cluster to count a valid allele
+my $mincov = 2;		# min coverage needed in cluster to count a valid allele. THIS RESETS BELOW
 my $site = "\\w{12}GCA\\w{6}TGC\\w{12}";	# recognition site in Perl regexp
 my $qthd = 30;		# minimum allowed score; anything lower counts as low quality (LQ)
 my $maxlq = 0;		# maximum allowed number of LQ positions
@@ -170,8 +170,13 @@ system("grep -P \"$site\" VHQ.fasta -B 1 > matches.fasta");
 system("perl -pi -e \"s/^--\n//g\" matches.fasta");
 MATCHES:				# end of restriction site filtering section
 
-print "Done filtering for site matches. Matches found:\n";
-system("grep '>' matches.fasta -c");
+$nmatches = `grep \">\" matches.fasta -c`;
+chomp($nmatches);
+print "Done filtering for site matches. $nmatches matches found.\n";
+
+# -- reset min cov for initial clustering at 1 read per 5 million
+$newmincov = int($nmatches/5000000+0.5);
+if ($newmincov > 2) {$mincov = $newmincov;}
 
 # -- this step identifies sequences observed repeatedly in the VHQ dataset
 # -- we call these "valid alleles"
@@ -314,11 +319,15 @@ system("date");
 
 # -- build trees for each cluster in an effort to distinguish between paralogs and alleles
 print "Testing for clusters containing multiple loci...\n";
+$ctestno = 0;
+@allcs = keys(%grah);
+$nallcs = @allcs;
 foreach $c (sort(keys(%grah)))
 	{			# count members in each cluster
 	%cih = %{$grah{$c}};
 	@cmems = sort(keys(%cih));
 	$ncmems = @cmems;
+	$ctestno++;
 # If fewer than 4 alleles were observed, it's not possible to use sequence relationships
 # among alleles to infer the number of loci in the cluster. 
 	if ($ncmems < $minmems)
@@ -340,6 +349,8 @@ foreach $c (sort(keys(%grah)))
 		$poly_max++;
 		next;
 		}
+# for clusters of the right size for tree building
+	print STDERR "Resolving cluster number $ctestno of $nallcs, with $ncmems members ... ";
 # extract sequences of all cluster members
 	$c4tree++;
 	$found = 0;
@@ -375,7 +386,6 @@ foreach $c (sort(keys(%grah)))
 #	system("cat tmp.fasta");
 
 # tree building code here
-
 # prepare for tree building
 	if(glob("*.tree"))	{system("rm *.tree");}
 	%cladeh = %deph = %blenh = ();
@@ -383,7 +393,7 @@ foreach $c (sort(keys(%grah)))
 # build tree describing relationships among members of the cluster
 	RAXML:
 	system("raxmlHPC -s tmp.fasta -p 123 -m GTRCAT -n out.tree > ml.log");
-	system("sleep 2");
+	system("sleep 1");
 
 # parse tree to identify clades that differ by at least the critical 
 # minimum difference ($mindepth variable)
@@ -394,7 +404,9 @@ foreach $c (sort(keys(%grah)))
 		$rootnode = $tree->get_root_node;
 		}
 	else	{
-		print "Tree not found. Re-building...\n";
+		$contents = `cat tmp.fasta`;
+		print STDERR "Tree not found. Re-building...\n";
+		print STDERR $contents, "\n";
 		goto RAXML;
 		}
 
@@ -422,7 +434,7 @@ foreach $c (sort(keys(%grah)))
 		if ($deph{$tclade}==0)
 			{
 			$outh{$tha[0]}++;
-			$tmpfateh{$tclade}++;
+			$tmpfateh{$tclade} = $tha[0];
 			}	
 # store a representative of each clade judged to be sufficiently different to
 # represent a seperate locus
@@ -430,14 +442,23 @@ foreach $c (sort(keys(%grah)))
 			{
 #			print $tclade, "\t", $tha[0], "\t", $ntha, "\t", "@tha", "\n";
 			$outh{$tha[0]}++;
-			$tmpfateh{$tclade}++;
+			$tmpfateh{$tclade} = $tha[0];
 			}
 		}
 # end tree building code
 	@tmpkeys = keys(%tmpfateh);
 	$nkeys = @tmpkeys;
-	if ($nkeys > 1) {$splitclust++; $newclust += $nkeys;}
-	else	{$remainsingle++;}
+	if ($nkeys > 1) 
+		{
+		$splitclust++; 
+		$newclust += $nkeys;
+		print STDERR " split into $nkeys loci.\n";
+		}
+	else	
+		{
+		$remainsingle++;
+		print STDERR " left as a single locus.\n";
+		}
 	}
 
 print "Finished tree analysis.\n";
