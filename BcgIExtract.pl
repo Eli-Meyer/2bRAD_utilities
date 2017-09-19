@@ -17,8 +17,8 @@ if ($#ARGV != 1 || $ARGV[0] eq "-h") {print "\n", "-"x60, "\n", $scriptname, "\n
 my $seqfile = $ARGV[0];
 open(SEQ, $seqfile);
 
-$patt = ".{10}CGA.{6}TGC.{12}";
-$rcpatt = ".{12}GCA.{6}TCG.{10}";
+$patt = ".{12}CGA.{6}TGC.{12}";
+$rcpatt = ".{12}GCA.{6}TCG.{12}";
 $size = 36;
 
 print "Forward sequence of recognition site: ", $patt, "\n";
