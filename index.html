@@ -142,7 +142,7 @@
    <li><b>Truncate</b></li>
    <p>Since AlfI produces uniform 36-bp restriction fragments, we first truncate sequences to keep only
    the inserts derived from these fragments. This can be accomplished by running:<br>
-   <code>TruncateFastq.pl input.fastq 1 36 output.fastq</code><br>
+   <code>TruncateFastq.pl -i input.fastq -s 1 -e 36 -o output.fastq</code><br>
    to read "input.fastq", trim away the sequences after 36 bp, and write the output to a file called "output.fastq".<br>
    To read instructions for any of the scripts described here, run the script with no arguments. e.g. :<br>
    <code>TruncateFastq.pl</code><br>
@@ -151,7 +151,7 @@
    <li><b>Quality Filter</b></li>
    <p>Next, we exclude low quality reads that might introduce errors in genotyping. The choice of thresholds is
    somewhat arbitrary and ultimately up to the user. For an example using reasonable default settings, run:<br>
-   <code>QualFilterFastq.pl input.fastq 20 18 output.fastq</code><br>
+   <code>QualFilterFastq.pl -i input.fastq -q 20 -x 18 -o output.fastq</code><br>
    to remove any reads from "input.fastq" having more than 18 bases with quality scores lower than 20, and write
    the output to a file named "output.fastq".<br>
    </p>
