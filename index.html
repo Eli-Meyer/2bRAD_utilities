@@ -296,7 +296,7 @@
       </li>
     </ul>
    Run the script with no arguments to learn the options:<br>
-    <code>CallGenotypes.pl -i allele_counts.tab -o genotypes.tab -c 10</code><br>
+    <code>CallGenotypes.pl</code><br>
    Then run the script with appropriate settings as e.g.:<br>
     <code>CallGenotypes.pl -i combined.tab -o genotypes.tab -c 10</code><br>
     </ul>
@@ -306,10 +306,10 @@
   <div class="row"><br>
   <a href="#filter" class="hide" id="filter" style="text-decoration: none; color: black; margin-left: 2%; font-size:14pt">
    <span title="Click to expand">
-   <b>&#9655 Combine and filter genotypes</b></span></a>
+   <b>&#9655 Filter genotypes</b></span></a>
   <a href="#top" class="show" id="top" style="text-decoration: none; color: blue; margin-left: 2%; font-size:14pt">
    <span title="Click to collapse">
-   <b>&#9665 Combine and filter genotypes</b></span></a>
+   <b>&#9665 Filter genotypes</b></span></a>
    <div class="list">
    <ul>
 
@@ -317,35 +317,38 @@
    <p>Typically we are only interested in polymorphic loci (SNPs). We apply this filter first, since most
    loci are monomorphic and excluding them  will greatly reduce file sizes. This is accomplished by running
    the following script:<br>
-   <code>PolyFilter.pl combined.tab 2 y > snps.tab</code><br>
+   <code>PolyFilter.pl -i combined.tab -n 2 -p y -o snps.tab</code><br>
    In this example, we selected all loci at which 2 or more genotypes were observed, writing them to a file called "snps.tab".
-   The choice of "y" for the option switch indicates that we want the script to write the selected loci to
-   a file. Choosing "n" instead would only report the number of loci passing the filter, without writing those
-   genotypes to output.<br></p>
+   The choice of "y" for the print option indicates that we want the script to write the selected loci to
+   a file. Choosing "n" instead (the default) would only report the number of loci passing the filter, without writing those
+   genotypes to output.<br>
+   Note that this script can also be used to filter out loci at which the minor allele is only present in a small number of
+   individuals (e.g. alleles found in only a single individual). See the -v and -s options for more details.
+    </p>
 
    <li><b>Filter to exclude low-coverage samples</b></li>
    <p>If a few samples are sequenced at lower depth than the others, they increase the total amount of missing data
    with little benefit. This script excludes samples for which too few genotypes were determined. Run the following:<br>
-   <code>LowcovSampleFilter.pl snps.tab 1000 n</code><br>
+   <code>LowcovSampleFilter.pl -i snps.tab -n 1000</code><br>
    In this example, we have chosen to count the number of samples for which at least 1000 loci were genotyped. It's
    generally a good idea to first explore a variety of thresholds, to evaluate whether there are a few samples with
    substantially more missing data than others. e.g. if gradually increasing the thresholds eliminates a small number
    of samples at a low threshold, then no further samples are eliminated as the threshold continues to increase, this
    indicates a few samples are contributing disproportionately more to the overall missing data and should be excluded.
    Once you've determined the threshold that best balances sample numbers and missing data, extract those loci as e.g.:<br>
-   <code>LowcovSampleFilter.pl snps.tab 2200 y > samplefiltered_snps.tab</code><br>
+   <code>LowcovSampleFilter.pl -i snps.tab -n 2200 -p y -o samplefiltered.tab</code><br>
    (In this example, we've chosen to write all samples with at least 2200 SNPs genotyped to a file named
-   "samplefiltered_snps.tab")<br></p>
+   "samplefiltered.tab")<br></p>
 
    <li><b>Filter to exclude low-coverage loci</b></li>
    <p>While the previous step excluded samples (columns) genotyped in too few loci, this step excludes loci (rows)
    genotyped in too few samples to be informative. This is accomplished as:<br>
-   <code>MDFilter.pl samplefiltered_snps.tab 40 n</code><br>
+   <code>MDFilter.pl -i samplefiltered.tab -n 40</code><br>
    Again, its useful to first explore the effects of a variety of thresholds to identify a threshold that achieves
    a good balance between the number of loci and the proportion of missing data. Once you've identified a threshold,
    run the following:<br>
-   <code>MDFilter.pl samplefiltered_snps.tab 45 y >mdfiltered_samplefiltered_snps.tab</code><br>
-   In this example, we've chosen to write all loci genotyped in at least 45 samples to a file named "mdfiltered_samplefiltered_snps.tab".<br>
+   <code>MDFilter.pl -i samplefiltered.tab -n 45 -p y -o mdfiltered.tab</code><br>
+   In this example, we've chosen to write all loci genotyped in at least 45 samples to a file named "mdfiltered.tab".<br>
    </p>
 
    <li><b>Filter to exclude repetitive sites</b></li>
@@ -357,17 +360,17 @@
    The independent accumulation of SNPs at multiple loci, and their subsequent mapping back to a single reference sequence,
    can be expected to produce sites with unusually high numbers of SNPs. These are excluded to guard against errors
    resulting from repetitive sites. This is accomplished as:<br>
-   <code>RepTagFilter.pl mdfiltered_samplefiltered_snps.tab 2 n</code><br>
+   <code>RepTagFilter.pl -i mdfiltered.tab -n 2</code><br>
    In this example, we've chosen to count the number of sites bearing no more than 2 SNPs. Once you've determined
    which threshold to use, you can write the results to a file as:<br>
-   <code>RepTagFilter.pl mdfiltered_samplefiltered_snps.tab 2 y >nr_mdfiltered_samplefiltered_snps.tab</code><br>
+   <code>RepTagFilter.pl -i mdfiltered.tab -n 2 -p y -o nr.tab</code><br>
    </p>
 
    <li><b>Select one SNP per tag</b></li>
    <p>Since multiple SNPs on a single tag (AlfI restriction site) are unlikely to be separated by recombination,
    they can usually be expected to segregate as a single locus. For many analyses its appropriate to remove these
    redundant SNPs prior to analysis. This can be accomplished as:<br>
-   <code>OneSNPPerTag.pl nr_mdfiltered_samplefiltered_snps.tab y >selected_snps.tab</code><br>
+   <code>OneSNPPerTag.pl -i nr.tab -p y -o selected_snps.tab</code><br>
    For any sites having multiple SNPs, this script selects the SNP with the least missing data and write the output
    to a file; in this example, named "selected_snps.tab".
    <br><br>This output constitutes the endpoint of the standard 2bRAD analysis pipeline. The next steps depend on the study
