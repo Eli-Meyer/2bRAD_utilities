@@ -1,0 +1,52 @@
+header {
+        text-decoration: none;
+}
+hr {
+        width: 460pt;
+        align: left;
+        color: #D8D8D8 ;
+        bg-color: #D8D8D8 ;
+        border-color: #D8D8D8 ;
+}
+
+body {
+  background: #FFFFFF;
+  color: black;
+  padding: 0;
+  margin: 0;
+  font-family: "Arial";
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1.5;
+  position: relative;
+  cursor: default;
+  margin-left: 5%;
+  margin-right: 5%; }
+
+
+ .show {
+        text-decoration: none;
+        color: black;
+        margin-left: 2%;
+        }
+
+ .hide {
+        text-decoration: none;
+        color: black;
+        margin-left: 2%;
+        }
+
+ .row { vertical-align: top; height:auto !important; }
+ .list {display:none; }
+ .show {display: none; }
+ .hide:target + .show {display: inline; }
+ .hide:target {display: none; }
+ .hide:target ~ .list {display:inline; }
+ @media print { .hide, .show { display: none; } }
+
+code {
+    background-color: #E1E1E1;
+    margin-left: 2%;
+    line-height: 1.5;
+    padding: 4pt 4pt 4pt 4pt;
+}
