@@ -151,8 +151,8 @@
    <li><b>Quality Filter</b></li>
    <p>Next, we exclude low quality reads that might introduce errors in genotyping. The choice of thresholds is
    somewhat arbitrary and ultimately up to the user. For an example using reasonable default settings, run:<br>
-   <code>QualFilterFastq.pl -i input.fastq -q 20 -x 18 -o output.fastq</code><br>
-   to remove any reads from "input.fastq" having more than 18 bases with quality scores lower than 20, and write
+   <code>QualFilterFastq.pl -i input.fastq -m 20 -x 5 -o output.fastq</code><br>
+   to remove any reads from "input.fastq" having more than 5 bases with quality scores lower than 20, and write
    the output to a file named "output.fastq".<br>
    </p>
    <li><b>Adaptor filter</b></li>
@@ -228,7 +228,7 @@
    <li><b>Filter alignments</b></li>
    The raw alignments may include weak and ambiguous alignments (i.e. cases where a single read matches equally well
    to two or more regions of the genome). To remove these:<br>
-   <code>SamFilter.pl gmapper.sam 30 32 filtered.sam counts.tab</code><br>
+   <code>SAMFilter.pl -i gmapper.sam -m 32 -o filtered.sam</code><br>
    In this example, we chose to exclude any alignments spanning less than 32 bp and any alignments having fewer than
    30 matching bp. Ambiguous matches are also eliminated by default. The alignments passing this filter are written to
    an output file called "filtered.sam".<br>
@@ -248,12 +248,21 @@
 
    <li><b>Count nucleotide frequencies</b></li>
    <p>First, we parse the alignments to record the nucleotides observed at each position in each reference sequence.
-   This can be accomplished using the SAMBasecaller.pl script, as:<br>
-   <code>SAMBasecaller.pl filtered.sam reference.fasta 3 basecalls.tab</code><br>
+   This can be accomplished using the SAMBaseCounts.pl script, as:<br>
+   <code>SAMBaseCounts.pl -i filtered.sam -r reference.fasta -5 -o base_counts.tab</code><br>
    <p>In this example, the reference is "reference.fasta", the alignments to be parsed are in "filtered.sam",
-   and we've chosen a minimum coverage of 3 (i.e. loci covered by < 3 reads will be ignored). The output is
-   written to a tab-delimited text file called "basecalls.tab".</p>
+   and we've chosen a minimum coverage of 5 (i.e. loci covered by < 5 reads will be ignored). The output is
+   written to a tab-delimited text file called "base_counts.tab".</p>
 
+   <li><b>Combine base counts from multiple samples prior to calling genotypes</b></li>
+   <p>Because some of the genotyping methods require population information, we combine the nucleotide counts prior to 
+   determining genotypes. This can be accomplished using the script CombineBaseCounts.pl, as:<br>
+   <code>CombineBaseCounts.pl sample1/genotypes.tab sample2/genotypes.tab ... sampleN/genotypes.tab >combined.tab</code><br>
+   In this example, we are combining files called "genotypes.tab", for each sample ("sample1", "sample2", etc.
+   up to sampleN). Depending on your sample names and directory structure, this may be easily accomplished with wildcards:<br>
+   <code>CombineBaseCounts.pl sample*/genotypes.tab >combined.tab</code><br>
+   The output is written to a file named "combined.tab".<br>
+    
    <li><b>Determine genotypes from nucleotide frequencies</b></li>
    <p>Finally, to determine the genotype at each position, we consider the allele frequencies at each locus and call the genotype
    as either homozygous for the major allele, heterozygous for the two observed alleles, or unknown (for cases of intermediate
@@ -279,16 +288,6 @@
    <b>&#9665 Combine and filter genotypes</b></span></a>
    <div class="list">
    <ul>
-
-   <li><b>Combine genotypes from multiple sample into a genotype matrix</b></li>
-   <p>To facilitate comparisons among samples, genotypes called in multiple samples are first combined
-   into a single genotype matrix with samples as columns and loci as rows. This can be accomplished using
-   the script CombineGenotypes.pl, as:<br>
-   <code>CombineGenotypes.pl sample1/genotypes.tab sample2/genotypes.tab ... sampleN/genotypes.tab >combined.tab</code><br>
-   In this example, we are combining files called "genotypes.tab", for each sample ("sample1", "sample2", etc.
-   up to sampleN). Depending on your sample names and directory structure, this may be easily accomplished with wildcards:<br>
-   <code>CombineGenotypes.pl sample*/genotypes.tab >combined.tab</code><br>
-   The output is written to a file named "combined.tab".<br>
 
    <li><b>Filter to select polymorphic loci (SNPs)</b></li>
    <p>Typically we are only interested in polymorphic loci (SNPs). We apply this filter first, since most
