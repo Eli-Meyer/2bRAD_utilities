@@ -264,7 +264,7 @@
     
    <li><b>Determine genotypes from nucleotide frequencies</b></li>
    <p>Finally, we determine genotype at each position in each sample, based on nucleotide frequencies in that sample and in the
-   population. Our script includes several options:
+   population. Our script CallGenotypes.pl includes several options:
    <ul>
     <li>Nucleotide frequencies (-m nf). This method is the default. These simple rules for genotyping were originally described in the 
     2bRAD method paper (Wang et al. 2012), and have been repeatedly validated. This approach operates directly on allele counts:
@@ -295,18 +295,11 @@
       </ul>
       </li>
     </ul>
-  
-     as either homozygous for the major allele, heterozygous for the two observed alleles, or unknown (for cases of intermediate
-   allele frequencies that can't be accurately determined). This can be accomplished using NFGenotyper.pl, as:<br>
-   <code>NFGenotyper.pl basecalls.tab 0.01 0.25 20 > genotypes.tab</code><br>
-   In this example, we've read an input file called "basecalls.tab" and applied the following nucleotide frequency thresholds.
-   The maximum minor allele frequency (MAF) allowed for homozygous calls ("max_MAF_homo") was set at 0.01: this means that if a second
-   allele is detected at < 1% of total coverage for a locus, this minor allele will be ignored and the locus called homozygous
-   for the major allele. The minimum MAF allowed for heterozygous calls ("min_MAF_hetero") was set at 0.25: this means that if a second
-   allele is detected at >=25% of total coverage for a locus, that locus will be called heterozygous. Any loci showing intermediate MAF
-   (in this example, between 1% and 25%) will be called "unknown" and not genotyped, since these cannot be genotyped with any confidence. The final threshold is minimum coverage; in this example, any loci having < 20x coverage will be ignored and
-   not genotyped.<br>
-   </ul>
+   Run the script with no arguments to learn the options:<br>
+    <code>CallGenotypes.pl -i allele_counts.tab -o genotypes.tab -c 10</code><br>
+   Then run the script with appropriate settings as e.g.:<br>
+    <code>CallGenotypes.pl -i combined.tab -o genotypes.tab -c 10</code><br>
+    </ul>
    </div>
   </div>
 
