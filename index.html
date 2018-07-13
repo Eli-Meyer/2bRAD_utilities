@@ -34,7 +34,9 @@
    tools. To analyze large numbers of samples in parallel, the user will probably want to (a) combine some of the
    following steps into shell scripts, and (b) submit each job to a job scheduler such as SGE. Since the details of
    those steps may vary from one cluster to another, we have left those details up to the end user.<br><br>
-   Click on each header to expand or collapse that section.</p>
+   Click on each header to expand or collapse that section.<br><br>
+    This tutorial covers the most recently updated version of the pipeline as of July 2018 (v3.0).
+    </p>
    </div>
   <br>
   </div>
@@ -60,19 +62,15 @@
     To install BioPerl, go to <a href="http://www.bioperl.org/wiki/Getting_BioPerl" title="Link to BioPerl website">the BioPerl Wiki</a> and follow the instructions given there. <br>
     </p>
    <li><b>Scripts</b></li>
-   <p>Our scripts for 2bRAD analysis are hosted on GitHub. You'll want to download scripts from two or three repositories:
+   <p>Our scripts for 2bRAD analysis are hosted on GitHub. You'll want to download scripts from this repository:
    <ol>
-    <li><a href="https://github.com/Eli-Meyer/sequence_processing" title="Link to GitHub repository">General purpose scripts for trimming and filtering NGS data.<a></li>
-    <li><a href="https://github.com/Eli-Meyer/2brad_utilities/tree/v2.0" title="Link to GitHub repository">Scripts specifically for 2bRAD analysis.<a></li>
-    <li><a href="https://github.com/Eli-Meyer/sequence_utilities" title="Link to GitHub repository">General purpose scripts for sequence analysis.<a></li>
+    <li><a href="https://github.com/Eli-Meyer/2brad_utilities/" title="Link to GitHub repository">Scripts specifically for 2bRAD analysis.<a></li>
    </ol>
    <br>The best way to do this is to use the <i>git</i> tool. While this is undoubtedly the best and most widely-used platform<br>
    for sharing code, the git tool itself is not simple or intuitive. To learn about use of git, we recommend
    <a href="http://gitref.org/" title="Link to GitRef website">this resource</a>.<br>
    To download the above repositories onto your system, assuming <i>git</i> is available:<br>
-   <code>git clone git://github.com/Eli-Meyer/sequence_processing.git<br></code>
-   <code>git clone -b v2.0 git://github.com/Eli-Meyer/2bRAD_utilities.git<br></code>
-   <code>git clone git://github.com/Eli-Meyer/sequence_utilities.git<br></code>
+   <code>git clone git://github.com/Eli-Meyer/2bRAD_utilities.git<br></code>
    Make sure you have execute permission to these scripts, and that they are in your path ($PATH).<br>
    </p>
    <li><b>bbduk.sh</b></li>
@@ -112,6 +110,22 @@
    <code>/local/cluster/RAxML/bin/raxmlHPC</code><br>
    If you get no feedback, you will need to download and install RAxML. Go to this
    <a href="http://sco.h-its.org/exelixis/web/software/raxml/cluster.html" title="Link to RAxML website">link</a> and follow the instructions on that site.<br>
+   <li><b>BGC</b></li>
+   BGC is the Bayesian Genotype Caller developed by Maruki & Lynch (<a href="http://www.g3journal.org/content/7/5/1393.long">2017</a>).
+   these programs need to be installed and available if the user wishes to use BGC during genotype calling (optional). 
+   To check for the software on your system, run:<br>
+   <code>which BGC</code><br>
+   <code>which GFE</code><br>
+   <code>which HGC</code><br>
+   If you get feedback similar to this, BGC is available on your system:<br>
+   <code>/local/cluster/BGC</code><br>
+   If any of these programs are unavailable, you will need to download and install them. Download the source files:<br>
+   <a href="http://www.g3journal.org/highwire/filestream/473133/field_highwire_adjunct_files/0/FileS1.zip">FileS1</a><br>
+   <a href="http://www.g3journal.org/highwire/filestream/473133/field_highwire_adjunct_files/0/FileS3.zip">FileS3</a><br>
+   <a href="http://www.g3journal.org/highwire/filestream/473133/field_highwire_adjunct_files/0/FileS5.zip">FileS5</a><br>
+   Then unzip the files and compile each one into an executable program, as e.g.
+    <code>g++ HGC.cpp -o HGC -lm</code>
+   <br>
    </ul>
    </div>
   </div>
@@ -343,7 +357,7 @@
   </div>
 
  <hr align="left" style="margin-left: 2%;">
-  <p style="margin-left: 2%; font-size: 85%;">Last updated 20 Jan 2016, E. Meyer.</p>
+  <p style="margin-left: 2%; font-size: 85%;">Last updated 13 July 2018, E. Meyer.</p>
 
  </body>
 </html>
