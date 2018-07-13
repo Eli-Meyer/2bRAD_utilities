@@ -1,29 +1,41 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # written by E Meyer, eli.meyer@science.oregonstate.edu
 # distributed without any guarantees or restrictions
 
 # -- check arguments and print usage statement
 $scriptname=$0; $scriptname =~ s/.+\///g;
 $usage = <<USAGE;
-Converts a SNP matrix (produced from NFGenotyper.pl) into the format required by
+
+Converts a SNP matrix (produced from CallGenotypes.pl) into the format required by
 the software DADI, described at: https://bitbucket.org/gutenkunstlab/dadi/wiki/DataFormats
-Usage: $scriptname input key reference output
+Usage: $scriptname -i input -k key -r reference -o output
 Where:
-	input:		name of the input file (tab-delimited text)
-	key:		a tab-delimited text file associating each sample in the input
+	-i input	tab-delimited genotype matrix, with rows=loci and columns=samples.
+                	First two columns indicate tag and position respectively.
+                	This format is the output from CallGenotypes.pl.
+	-k key		a tab-delimited text file associating each sample in the input
 			with a population label. Alleles will be counted and reported
 			by the population labels assigned in this file. Formated as:
 			Sample_name	Population_name
-	reference:	Name of the reference file from which these SNPs were called (FASTA format)
-	out:		a name for the output file. Tab delimited text in DADI format.
+	-r reference	Name of the reference file from which these SNPs were called (FASTA format)
+	-o output	a name for the output file. Tab delimited text in DADI format.
+
 USAGE
-if ($#ARGV != 3 || $ARGV[0] eq "-h") {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
+
+# -- module and executable dependencies
+$mod1="Getopt::Std";
+unless(eval("require $mod1")) {print "$mod1 not found. Exiting\n"; exit;}
+use Getopt::Std;
+
+# get variables from input
+getopts('i:k:r:o:h');	# in this example a is required, b is optional, h is help
+if (!$opt_i || !$opt_k || !$opt_r || !$opt_o || $opt_h) {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
 
 # build variables from user input
-$infile = $ARGV[0];
-$keyfile = $ARGV[1];
-$reffile = $ARGV[2];
-$outfile = $ARGV[3];
+$infile = $opt_i;
+$keyfile = $opt_k;
+$reffile = $opt_r;
+$outfile = $opt_o;
 
 # read population info from key file
 open(KEY,$keyfile);

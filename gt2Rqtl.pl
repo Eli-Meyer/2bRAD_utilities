@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # written by E Meyer, eli.meyer@science.oregonstate.edu
 # distributed without any guarantees or restrictions
 
@@ -6,24 +6,36 @@
 $scriptname=$0; $scriptname =~ s/.+\///g;
 $usage = <<USAGE;
 Converts a 2bRAD genotype matrix into the csv input format required by R/qtl.
-Usage: $scriptname snps traits output
+Usage: $scriptname -i input -t traits -o output
 Where:
-	snps:		tab-delimited genotype matrix (columns=samples, rows=loci) 
-			produced by RADGenotyper.pl or NFGenotyper.pl
-	traits:		tab-delimited file of data on  traits
-			arranged as sample/trait1/..traitN
-			note that sample names must match column headers in snps file
-	map:		tab-delimited file of map positions as
-			marker/LG/position
-	output: 	a name for the csv formatted output file.
+	-i input	tab-delimited genotype matrix, with rows=loci and columns=samples.
+                	First two columns indicate tag and position respectively.
+                	This format is the output from CallGenotypes.pl.
+	-t traits	tab-delimited file of data on  traits, as
+				"sample1	trait1	...	traitN"
+			(note that sample names must match column headers in snps file)
+	-m map		tab-delimited file of map positions as
+				"marker	  LG	position"
+	-o output	a name for the csv formatted output file.
 USAGE
-if ($#ARGV != 3 || $ARGV[0] eq "-h") {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
+
+# -- module and executable dependencies
+$mod1="Getopt::Std";
+unless(eval("require $mod1")) {print "$mod1 not found. Exiting\n"; exit;}
+use Getopt::Std;
+
+# get variables from input
+getopts('i:o:h');	# in this example a is required, b is optional, h is help
+if (!$opt_i || !$opt_o || $opt_h) {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
+
+open(IN, $opt_i);
+open(OUT, ">$opt_o");
 
 # -- define variables from input
-$infile = $ARGV[0];
-$traitfile = $ARGV[1];
-$mapfile = $ARGV[2];
-$outfile = $ARGV[3];
+$infile = $opt_i;
+$traitfile = $opt_t;
+$mapfile = $opt_m;
+$outfile = $opt_o;
 
 # -- read and store trait data 
 open(IN, $traitfile);

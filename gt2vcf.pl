@@ -1,26 +1,39 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # written by E Meyer, eli.meyer@science.oregonstate.edu
 # distributed without any guarantees or restrictions
 
 # -- check arguments and print usage statement
 $scriptname=$0; $scriptname =~ s/.+\///g;
 $usage = <<USAGE;
+
 Converts a genotype matrix (loci x samples) to a VCF file.
-Usage: $scriptname input reference filters > output
-Where:  input:  	tab-delimited genotype matrix, with rows=loci and columns=samples.
+Usage: $scriptname -i input -r reference -o output <options>
+Required arguments:
+	-i input	tab-delimited genotype matrix, with rows=loci and columns=samples.
                 	First two columns indicate tag and position respectively.
-                	This format is the output from RADGenotyper.pl.
-	reference:	Complete path to the reference file used to generate these genotypes (FASTA). 
-	filters:	(OPTIONAL) a text file described filters applied to the genotypes, as:
-				(code	description). e.g.	"MD	removed loci genotyped in <20 samples"
-        output: a name for the output file. VCF format.
+                	This format is the output from CallGenotypes.pl.
+	-o output	a name for the output file. FASTA alignment format.
+	-r reference	Complete path to the reference file used to generate these genotypes (FASTA). 
+Options:
+	-f filters	a text file described filters applied to the genotypes. this information
+			will be included in the VCF file. e.g.	
+			  "MD	removed loci genotyped in <20 samples"
+
 USAGE
-if ($#ARGV < 0 || $ARGV[0] eq "-h") {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
+
+# -- module and executable dependencies
+$mod1="Getopt::Std";
+unless(eval("require $mod1")) {print "$mod1 not found. Exiting\n"; exit;}
+use Getopt::Std;
+
+# get variables from input
+getopts('i:o:r:f:h');	# in this example a is required, b is optional, h is help
+if (!$opt_i || !$opt_o || !$opt_r || $opt_h) {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
 
 # open input file
-open(IN, $ARGV[0]);
-if ($ARGV[1]) {$rfile = $ARGV[1];}
-if ($ARGV[2]) {$ffile = $ARGV[2];}
+open(IN, $opt_i);
+open(OUT, ">$opt_o");
+
 
 # add metadata lines to output file
 print "##fileformat=VCFv4.2\n";

@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # written by E Meyer, eli.meyer@science.oregonstate.edu
 # distributed without any guarantees or restrictions
 
@@ -6,33 +6,31 @@
 $scriptname=$0; $scriptname =~ s/.+\///g;
 $usage = <<USAGE;
 Converts a 2bRAD genotype matrix into the input format required by BayeScan.
-Usage: $scriptname input pop.file output
-Where:
-	input:		tab-delimited genotype matrix (columns=samples, rows=loci) 
-			produced by RADGenotyper.pl or NFGenotyper.pl
-	pop.file:	a tab-delimited text file showing which population each
+Usage: $scriptname -i input -p pop.file -o output
+Required arguments:
+        -i input        tab-delimited genotype matrix, with rows=loci and columns=samples.
+                        First two columns indicate tag and position respectively.
+                        This format is the output from CallGenotypes.pl.
+	-p pop.file	a tab-delimited text file showing which population each
 			sample was drawn from. Formatted as: SampleName \"\\t\" PopName \"\\n\"
 			Note -- make sure that sample names in this file are exactly identical
 			to those shown in the first row of the genotype matrix.
-	output: 	a name for the BayeScan formatted output file.
+	-o output 	a name for the BayeScan formatted output file.
 USAGE
-if ($#ARGV != 2 || $ARGV[0] eq "-h") {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
 
 # -- module and executable dependencies
-# use this block if checking for executable dependencies
-# copy the block and edit to check for additional Perl modules required by the script
-#$mod1="File::Which";
-#unless(eval("require $mod1")) {print "$mod1 not found. Exiting\n"; exit;}
-#use File::Which;
+$mod1="Getopt::Std";
+unless(eval("require $mod1")) {print "$mod1 not found. Exiting\n"; exit;}
+use Getopt::Std;
 
-# use this block and edit to check for executables required by the script
-#$dep1 = "blastx";
-#unless (defined(which($dep1))) {print $dep1, " not found. Exiting.\n"; exit;}
+# get variables from input
+getopts('i:p:o:h');	# in this example a is required, b is optional, h is help
+if (!$opt_i || !$opt_p ||  !$opt_o || $opt_h) {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
 
 # -- define variables from input
-$infile = $ARGV[0];
-$popfile = $ARGV[1];
-$outfile = $ARGV[2];
+$infile = $opt_i;
+$popfile = $opt_p;
+$outfile = $opt_o;
 
 # -- read and store sample-population association provided by user in popfile
 open(IN, $popfile);

@@ -5,13 +5,13 @@
 # -- check arguments and print usage statement
 $scriptname=$0; $scriptname =~ s/.+\///g;
 $usage = <<USAGE;
-Converts a genotype matrix (loci x samples) to a PHYLIP-formatted alignment.
+Converts a genotype matrix (loci x samples) to a FASTA-formatted alignment.
 Usage: $scriptname -i input -o output
 Required arguments:
 	-i input	tab-delimited genotype matrix, with rows=loci and columns=samples.
                 	First two columns indicate tag and position respectively.
                 	This format is the output from CallGenotypes.pl.
-	-o output	a name for the output file. PHYLIP alignment format.
+	-o output	a name for the output file. FASTA alignment format.
 USAGE
 
 # -- module and executable dependencies
@@ -29,8 +29,6 @@ $ch{"A T"} = "W"; $ch{"T A"} = "W";
 $ch{"C G"} = "S"; $ch{"C G"} = "S";
 $ch{"C T"} = "Y"; $ch{"C T"} = "Y";
 $ch{"G T"} = "K"; $ch{"G T"} = "K";
-
-$window = 10;
 
 open(IN, $opt_i);
 open(OUT, ">$opt_o");
@@ -62,33 +60,13 @@ while(<IN>)
 	}
 
 
-print OUT " " x 4, $nom, " " x 3, $rowcount-1, "\n";
-$bsize = 50;
-$noblocks = int(($rowcount-1)/$bsize+0.5);
-foreach $a (1..$noblocks)
-	{
-
 foreach $s (sort(keys(%gh)))
 	{
 	%sh = %{$gh{$s}};
-	if ($a==1) 
-		{print OUT $s;
-		$lens = length($s);
-		$diff = $window-$lens;
-		print OUT " " x $diff;
-		}
-	else	{print OUT " " x $window;}
-	print OUT " ";
-	for ($c=0; $c<5; $c++)
+	print OUT ">",$s,"\n";
+	for ($b=1; $b<$rowcount; $b++)
 		{
-	for ($b=0; $b<10; $b++)
-		{
-		$cni = $b + ($c * 10) + ($bsize * ($a-1));
-		print OUT $sh{$cni+1};
+		print OUT $sh{$b};
 		}
-		print OUT " ";
-		}
-	print OUT "\n";
-	}
 	print OUT "\n";
 	}

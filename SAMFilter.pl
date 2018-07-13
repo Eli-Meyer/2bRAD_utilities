@@ -1,30 +1,44 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # written by E Meyer, eli.meyer@science.oregonstate.edu
-# distributed without restrictions or guarantees
+# distributed without any guarantees or restrictions
 
+# -- check arguments and print usage statement
 $scriptname=$0; $scriptname =~ s/.+\///g;
-if ($#ARGV != 4 || $ARGV[0] eq "-h") 
-	{
-	print "\nFilters the output from mapping short reads against a reference,\n";
-	print "excluding short, weak, and ambiguous matches.\n";
-	print "NOTE: make sure you've chosen settings for your mapper that output multiple\n";
-	print "alignments for reads that match multiple reference sequences, because this is\n";
-	print "required to test for ambiguous matches.\n";
-	print "Usage:\t$scriptname input.sam min_matching min_aligned output.sam counts.tab\n";
-	print "\tinput.sam: \tOutput from any short read mapper, SAM format.\n";
-	print "\tmin_matching: \tMinimum number of matching bases.\n";
-	print "\tmin_aligned: \tMinimum length of aligned region (bp).\n";
-	print "\toutput.sam: \tName for output file containing alignments passing this filter, SAM format.\n";
-	print "\tcounts.tab: \tName for the count output (reads per gene), tab delimited text.\n\n";
-	exit;
-	}
-my $infile = $ARGV[0];
-my $mthd = $ARGV[1];
-my $athd = $ARGV[2];
-my $outfile = $ARGV[3];
-my $countfile = $ARGV[4];
-my $ambig = 0;
-my $tooshort = 0;
+$usage = <<USAGE;
+Filters the alignments produced by mapping short reads against a reference,
+excluding ambiguous, short, and weak matches.
+NOTE: make sure that when a read matches multiple reference sequences (ambigous)
+your mapper reports at least two alignments in the output. This is NOT the default 
+behavior for some mappers, but is required to exclude ambiguous matches before genotyping.
+
+Usage:  $scriptname -i input -m matches -o output <options>
+Required arguments:
+	-i input	Output from any short read mapper, in SAM format.
+	-m matches	Minimum number of matching bases required to consider an alignment valid. 
+	-o output	A name for the filtered output (SAM format). 
+Options:
+	-c option	1: Report the number of reads matching each reference sequence
+			in a separate output files "counts.tab". 0: Don't produce this file (default).
+	-l length	Minimum length of aligned region (match, mismatch, + gaps) required to consider 
+			an alignment valid. Only relevant if your mapper uses local alignment. For global
+			alignments, this is set equal to -m. 
+USAGE
+if ($#ARGV < 3 || $ARGV[0] eq "-h") {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
+
+# -- module and executable dependencies
+$mod1="Getopt::Std";
+unless(eval("require $mod1")) {print "$mod1 not found. Exiting\n"; exit;}
+use Getopt::Std;
+
+# get variables from input
+getopts('i:m:o:c:l:h');	# in this example a is required, b is optional, h is help
+if (!$opt_i || !$opt_m || !$opt_o || $opt_h) {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
+if ($opt_c) {$cprint = 1;} else {$cprint = 0;}
+if ($opt_l) {$athd = $opt_l;} else {$a_thd = $opt_m;}
+my $infile = $opt_i;
+my $mthd = $opt_m;
+my $outfile = $opt_o;
+$ambig = $tooshort = 0;
 
 # read in sam file output and build a hash, counting raw mappings
 open(IN, $infile);
@@ -45,14 +59,11 @@ while(<IN>)
         $numstr = $cols[5];
         @chars = split("M", $numstr);
 	$aligni = $mismatchi = 0;
-#	print $numstr, "\t", "@chars", "\t";
 	foreach $c (@chars)
 		{
 		$c =~ s/.+\D//g;
 		if ($c > 0) {$aligni+=$c;}
-#		print $c, " ";
 		}
-#	print "\n";
 	if ($aligni < $athd) {$tooshort++; next;}
 
 
@@ -73,7 +84,6 @@ while(<IN>)
 	$maph{$cols[0]}{$cols[2]}{"string"} = $_;
 	$maph{$cols[0]}{$cols[2]}{"align"} = $aligni;
 	$maph{$cols[0]}{$cols[2]}{"match"} = $matchi;
-#	print $_, "\n";
 	}
 
 # count number of reads with one or more matches passing thresholds
@@ -111,12 +121,15 @@ foreach $r (@mra)
 	print OUT $rh{$moa[0]}{"string"}, "\n";
 	}
 
-open(CTS, ">$countfile");
+if ($cprint eq 1)
+{
+open(CTS, ">counts.tab");
 @sref = sort{$refch{$b}<=>$refch{$a}}(keys(%refch));
 foreach $s (@sref)
 	{
 	print CTS $s, "\t", $refch{$s}, "\n";
 	}
+}
 
 print $rawmap, " raw mappings altogether.\n";
 print $nmr, " reads had one or more matches\n";

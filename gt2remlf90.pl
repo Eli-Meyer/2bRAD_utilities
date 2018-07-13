@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # written by E Meyer, eli.meyer@science.oregonstate.edu
 # distributed without any guarantees or restrictions
 
@@ -8,18 +8,26 @@ $usage = <<USAGE;
 Converts a SNP genotype matrix (loci x samples) produced from 2bRAD genotyping
 into the format required for the BLUPF90 family of programs for mixed models
 and quantitative genetic analysis. See BLUPF90 manual for details of that format.
-Usage: $scriptname input > output
-Where	input:	SNP matrix produced from CombineGenotypes.pl 
-		(rows=loci, columns=samples, columns 1 & 2 show tag name and position in tag)
-	output: format expected by BLUPF90 programs
-		e.g.
-		sample0   02221022511020101020
-		sample100 12221222221222200010
+Usage: $scriptname -i input -o output
+Required arguments:
+	-i input	Name of the input file, from CallGenotypes.pl.
+			(rows=loci, columns=samples, columns 1 & 2 show tag name and position in tag)
+	-o output	A name for the output file, in the format expected by BLUPF90 programs, e.g.
+				sample0   02221022511020101020
+				sample100 12221222221222200010
 USAGE
-if ($#ARGV != 0 || $ARGV[0] eq "-h") {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
 
-# recode genotypes and build a hash keyed by sample, tag, position
-open(IN, $ARGV[0]);
+# -- module and executable dependencies
+$mod1="Getopt::Std";
+unless(eval("require $mod1")) {print "$mod1 not found. Exiting\n"; exit;}
+use Getopt::Std;
+
+# get variables from input
+getopts('i:o:h');	# in this example a is required, b is optional, h is help
+if (!$opt_i || !$opt_o || $opt_h) {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
+
+open(IN, $opt_i);
+open(OUT, ">$opt_o");
 while(<IN>)
 	{
 	chomp;
@@ -41,7 +49,7 @@ while(<IN>)
 	@saa = sort{$ch{$b}<=>$ch{$a}}(keys(%ch));
 	if (@saa > 2) 
 		{
-		print "Warning -- > 2 alleles detected at $cols[0] position $cols[1]\n";
+		print STDERR "Warning -- > 2 alleles detected at $cols[0] position $cols[1]\n";
 		next;
 		}
 	$maja = $saa[0];
@@ -53,7 +61,7 @@ while(<IN>)
 		elsif ($cols[$a] =~ $maja && $cols[$a] =~ $mina)	{push @recoded, "1"; $gth{$samples[$a]}{$cols[0]}{$cols[1]} = 1;}
 		elsif ($cols[$a] =~ $maja)	{push @recoded, "2"; $gth{$samples[$a]}{$cols[0]}{$cols[1]} = 2;}
 		elsif ($cols[$a] =~ $mina)	{push @recoded, "0"; $gth{$samples[$a]}{$cols[0]}{$cols[1]} = 0;}
-		else	{print "Warning -- foreign allele detected. Should have been eliminated earlier.\n";}
+		else	{print STDERR "Warning -- foreign allele detected at $cols[0] position $cols[1]\n";}
 		}
 	}
 
@@ -71,14 +79,14 @@ $bufflen = $maxlen+1;
 foreach $s (sort(keys(%gth)))
 	{
 	%sgth = %{$gth{$s}};
-	print $s, " "x($bufflen-length($s));
+	print OUT $s, " "x($bufflen-length($s));
 	foreach $t (sort(keys(%sgth)))
 		{
 		%tsgth = %{$sgth{$t}};
 		foreach $l (sort(keys(%tsgth)))
 			{
-			print $tsgth{$l};
+			print OUT $tsgth{$l};
 			}
 		}
-	print "\n";
+	print OUT "\n";
 	}

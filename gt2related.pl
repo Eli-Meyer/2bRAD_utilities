@@ -1,20 +1,30 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # written by E Meyer, eli.meyer@science.oregonstate.edu
 # distributed without any guarantees or restrictions
 
+# -- check arguments and print usage statement
 $scriptname=$0; $scriptname =~ s/.+\///g;
-if ($#ARGV != 0 || $ARGV[0] eq "-h") 
-	{
-        print "\nConverts a genotype matrix (loci x samples) into the appropriate input format for the R package related.\n";
-	print "Usage: $scriptname input > output\n"; 
-	print "Where:\tinput:\ttab-delimited genotype matrix, with rows=loci and columns=samples.\n";
-	print "\t\tFirst two columns indicate tag and position respectively.\n";
-	print "\t\tThis format is the output from RADGenotyper.pl.\n";
-	print "\toutput:\ta name for the output file. RELATED input format.\n\n";
-	exit;
-	}
+$usage = <<USAGE;
+Converts a genotype matrix (loci x samples) into the appropriate input format for the R package related
+Usage: $scriptname -i input -o output
+Required arguments:
+	-i input	tab-delimited genotype matrix, with rows=loci and columns=samples.
+                	First two columns indicate tag and position respectively.
+                	This format is the output from CallGenotypes.pl.
+	-o output	a name for the output file. RELATED format.
+USAGE
 
-open(IN, $ARGV[0]);
+# -- module and executable dependencies
+$mod1="Getopt::Std";
+unless(eval("require $mod1")) {print "$mod1 not found. Exiting\n"; exit;}
+use Getopt::Std;
+
+# get variables from input
+getopts('i:o:h');	# in this example a is required, b is optional, h is help
+if (!$opt_i || !$opt_o || $opt_h) {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
+
+open(IN, $opt_i);
+open(OUT, ">$opt_o");
 while(<IN>)
 	{
 	chomp;
@@ -48,26 +58,26 @@ $lkph{"T"}=4;
 foreach $s (sort(keys(%gh)))
 	{
 	%sh = %{$gh{$s}};
-	print $s,"\t";
+	print OUT $s,"\t";
 	for ($b=1; $b<$rowcount; $b++)
 		{
 		$gi = $sh{$b};
 		if ($gi eq 0)				# missing data
 			{
-			print "NA\tNA\t";
+			print OUT "NA\tNA\t";
 			next;
 			}
 		elsif ($gi !~ /\s/)			#homozygous
 			{
-			print $lkph{$gi}, "\t", $lkph{$gi}, "\t";
+			print OUT $lkph{$gi}, "\t", $lkph{$gi}, "\t";
 			next;
 			}				
 		elsif ($gi =~ /\s/)			#heterozygous
 			{
 			@alla = split(" ", $gi);
-			print $lkph{$alla[0]}, "\t", $lkph{$alla[1]}, "\t";
+			print OUT $lkph{$alla[0]}, "\t", $lkph{$alla[1]}, "\t";
 			next;
 			}
 		}
-	print "\n";
+	print OUT "\n";
 	}

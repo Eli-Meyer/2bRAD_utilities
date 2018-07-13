@@ -1,18 +1,28 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # written by E Meyer, eli.meyer@science.oregonstate.edu
 # distributed without any guarantees or restrictions
 
+# -- check arguments and print usage statement
 $scriptname=$0; $scriptname =~ s/.+\///g;
-if ($#ARGV != 0 || $ARGV[0] eq "-h") 
-	{
-	print "\nConverts a genotype matrix (loci x samples) to FSTAT format.\n";
-	print "Usage: $scriptname input > output\n"; 
-	print "Where:\tinput:\ttab-delimited genotype matrix, with rows=loci and columns=samples.\n";
-	print "\t\tFirst two columns indicate tag and position respectively.\n";
-	print "\t\tThis format is the output from RADGenotyper.pl.\n";
-	print "\toutput:\ta name for the output file. FSTAT format.\n\n";
-	exit;
-	}
+$usage = <<USAGE;
+Converts a genotype matrix (loci x samples) to FSTAT format.
+Usage: $scriptname -i input -o output
+Required arguments:
+	-i input	tab-delimited genotype matrix, with rows=loci and columns=samples.
+                	First two columns indicate tag and position respectively.
+                	This format is the output from CallGenotypes.pl.
+	-o output	a name for the output file. FSTAT format. corresponding locus_key 
+			and sample_key files are also produced.
+USAGE
+
+# -- module and executable dependencies
+$mod1="Getopt::Std";
+unless(eval("require $mod1")) {print "$mod1 not found. Exiting\n"; exit;}
+use Getopt::Std;
+
+# get variables from input
+getopts('i:o:h');	# in this example a is required, b is optional, h is help
+if (!$opt_i || !$opt_o || $opt_h) {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
 
 $zh{"A"} = "01";
 $zh{"C"} = "02";
@@ -20,8 +30,8 @@ $zh{"G"} = "03";
 $zh{"T"} = "04";
 $zh{"0"} = "0";
 
-open(IN, $ARGV[0]);
-open(OK, ">$ARGV[0].locuskey.tab");
+open(IN, $opt_i);
+open(OK, ">locus_key.$opt_o");
 while(<IN>)
 	{
 	chomp;
@@ -46,29 +56,30 @@ while(<IN>)
 	}
 
 
-open(OF, ">$ARGV[0].samplekey.tab");
+open(OF, ">sample_key.$opt_o");
+open(OUT, ">$opt_o");
 my $rowno = 0;
-print $nom-2, " ", $rowcount-1, " ", 4, " ", 2, "\n";
-foreach $k (sort(keys(%kh)))	{print $kh{$k}, "\n";}
+print OUT $nom-2, " ", $rowcount-1, " ", 4, " ", 2, "\n";
+foreach $k (sort(keys(%kh)))	{print OUT $kh{$k}, "\n";}
 foreach $s (sort(keys(%gh)))
 	{
 	$rowno++;
 	%sh = %{$gh{$s}};
 	print OF $rowno, "\t", $s, "\n";
-	print $rowno," ";
+	print OUT $rowno," ";
 	for ($b=1; $b<$rowcount; $b++)
 		{
 		$gi = $sh{$b};
 		if ($gi !~ /\s/)
 			{
-			print $zh{$gi}, $zh{$gi}, " ";
+			print OUT $zh{$gi}, $zh{$gi}, " ";
 			}
 		else
 			{
 			@alla = split(" ", $gi);
-			print $zh{$alla[0]}, $zh{$alla[1]}, " ";
+			print OUT $zh{$alla[0]}, $zh{$alla[1]}, " ";
 			}
 		}
-	print "\n";
+	print OUT "\n";
 	}
 close(OF);

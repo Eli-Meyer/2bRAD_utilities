@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # written by E Meyer, eli.meyer@science.oregonstate.edu
 # distributed without any guarantees or restrictions
 
@@ -6,17 +6,30 @@
 $scriptname=$0; $scriptname =~ s/.+\///g;
 $usage = <<USAGE;
 Builds a reference for de novo analysis of 2bRAD sequences from samples
-lacking a sequenced genome. Attempts to reconstruct the set of loci
-(recognition sites) represented in a collection of raw 2bRAD sequences.
-Usage: $scriptname input.fasta input.qual output.fasta 
-Where:
-	input.fasta:	10-20 million truncated, high-quality reads from a
-			representative subset of the samples
-	input.qual:	quality scores for the input reads
-	output.fasta:	a name for the output file, which will serve as a 
-			reference for mapping and genotyping
+without a sequenced genome. The script filters, clusters, and compares 
+similar sequences to infer the set of loci present in the species of
+interest, using a subset of reads from the samples themselves.
+Usage: $scriptname -i input -o output <OPTIONS>
+Required arguments:
+	-i input	The set of processed (truncated, HQ) reads (FASTQ) to be used for reference
+			development. Ideally this should include 10-20 million reads spanning the range
+			of known diversity (e.g. from all populations in your study). Prepare this 
+			ahead of time by concatenating together a subset of reads from your samples. 
+	-o output	a name for the output file, to be used as a reference in mapping and genotyping
+Options:
+	-v overwrite	0=do not overwrite existing files; use them for analysis. (default) 
+			1=do not use existing files; overwrite them with new files. 
+	-n mincov	Minimum depth to qualify as a valid allele. (default=2)
+	-q threshold	Quality scores below this threshold are low quality (default=30)
+	-x number	Maximum number of low quality bases allowed for reference construction (default=0)
+	-m mismatches	Maximum number of mismatches allowed in clustering of related alleles (default=2)
+	-d distance	Minimum number of bases required to resolve sub-clusters (default=1)
+	-a haplotypes	For very large clusters containing more than this number of unique sequences, 
+			do not attempt to resolve sub clusters. These indicate repetitive sequences 
+			which are not useful for genotyping anyway, and resolving these large clusters
+			is computationally intensive. (default=32) 
 USAGE
-if ($#ARGV != 2 || $ARGV[0] eq "-h") {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
+if ($#ARGV < 2 || $ARGV[0] eq "-h") {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
 
 # -- module and executable dependencies
 # use this block if checking for executable dependencies
@@ -27,6 +40,15 @@ use File::Which;
 $mod2="Bio::TreeIO";
 unless(eval("require $mod2")) {print "$mod2 not found. Exiting\n"; exit;}
 use Bio::TreeIO;
+$mod1="Getopt::Std";
+unless(eval("require $mod1")) {print "$mod1 not found. Exiting\n"; exit;}
+use Getopt::Std;
+$mod1="Bio::SeqIO";
+unless(eval("require $mod1")) {print "$mod1 not found. Exiting\n"; exit;} 
+use Bio::SeqIO;
+$mod2="Bio::Seq::Quality";
+unless(eval("require $mod2")) {print "$mod2 not found. Exiting\n"; exit;} 
+use Bio::Seq::Quality;
 
 # use this block and edit to check for executables required by the script
 $dep1 = "raxmlHPC";
@@ -34,19 +56,58 @@ unless (defined(which($dep1))) {print $dep1, " not found. Exiting.\n"; exit;}
 $dep2 = "cd-hit-est";
 unless (defined(which($dep2))) {print $dep2, " not found. Exiting.\n"; exit;}
 
-# define variables. edit these if you understand the consequences.
-my $seqfile = $ARGV[0];	# name of the input sequence file (fasta format)
-my $qualfile = $ARGV[1];# name of the input quality score file (qual format)
-my $outfile = $ARGV[2];	# a name for the final output file (cluster derived reference to be used for mapping)
-my $mindepth = 0.028;	# min branch length and depth to select clades. 0.028 corresponds to 1 bp distance
-my $initc = 0.944;	# 0.944 = 2 bp distance for initial clustering of alleles and paralogs
-my $mincov = 2;		# min coverage needed in cluster to count a valid allele. THIS RESETS BELOW
-my $site = "\\w{12}GCA\\w{6}TGC\\w{12}";	# recognition site in Perl regexp
-my $qthd = 30;		# minimum allowed score; anything lower counts as low quality (LQ)
-my $maxlq = 0;		# maximum allowed number of LQ positions
-my $ow_opt = 0;		# decide whether to overwrite existing files. 1 = force overwrite; 0 = use existing files
-my $minmems = 4;	# minimum number of sequences in a clade to consider tree building. Don't set below 4.
-my $maxmems = 100;	# maximum number of sequences in a clade to consider tree building.
+# get variables from input
+getopts('i:o:v:n:q:x:m:d:a:h');	
+if (!$opt_i || !$opt_o || $opt_h) {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
+if ($opt_v) {$ow_opt=$opt_v;} else {$ow_opt = 0;}	# overwrite options: 1=overwrite
+if ($ow_opt ne 0 && $ow_opt ne 1) {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
+if ($opt_n) {$mincov=$opt_n;} else {$mincov = 2;}	# min coverage for valid alleles
+if ($opt_q) {$qthd=$opt_q;} else {$qthd = 30;}		# quality score threshold
+if ($opt_x) {$maxlq=$opt_x;} else {$maxlq = 0;}		# max LQ positions threshold
+if ($opt_a) {$maxmems=$opt_a;} else {$maxmems = 32;}	# maximum cluster size for sub cluster analysis
+$infile = $opt_i;		# name of the input sequence file (fasta format)
+$outfile = $opt_o;		# a name for the final output file (reference to be used for mapping)
+if ($opt_d) {$depthi = $opt_d;} else {$depthi = 1;}
+$mindepth = 0.028 * $depthi;	# min branch length and depth to select clades. 0.028 corresponds to 1 bp distance
+if ($opt_m) {$maxmm = $opt_m;} else {$maxmm = 2;}
+$initc = (36 - $maxmm)/36;	# 0.944 = 2 bp distance for initial clustering of alleles and paralogs
+
+# define additional variables. edit these if you understand the consequences.
+$site = "\\w{12}GCA\\w{6}TGC\\w{12}";	# recognition site in Perl regexp
+$minmems = 4;	# minimum number of sequences in a clade to consider tree building. Don't set below 4.
+
+# convert fastq input to fasta
+my $wrap = 1000;		# only needs to be longer than maximum read length
+my $fastqfile = $infile;
+$nameroot = $fastqfile;
+$nameroot =~ s/\..+//;
+my $osfile = $nameroot.".fasta";
+my $oqfile = $nameroot.".qual";
+
+if ($ow_opt eq 0)
+	{
+	if (-e $osfile && -e $oqfile)
+		{
+		print "Found $osfile and $oqfile . Using these ...\n";
+		goto CONV;
+		}
+	}
+print "Converting FASTQ input into FASTA...\n";
+my $inseqs = new Bio::SeqIO(-file=>$fastqfile, -format=>"fastq");
+my $outseqs = new Bio::SeqIO(-file=>">$osfile", -format=>"fasta", -width=>$wrap);
+my $outquals = new Bio::SeqIO(-file=>">$oqfile", -format=>"qual", -width=>$wrap);
+my %sh; my $scount = 0;
+while ($seq = $inseqs->next_seq) 
+	{$sh{$seq->display_id} = $seq->seq;
+	$outseqs->write_seq($seq);
+	$outquals->write_seq($seq);
+	$scount++;
+	}
+
+print "Converted ", $scount, " reads from FASTQ to FASTA and QUAL.\n";
+CONV:				# end of file conversion section
+$seqfile = $osfile;
+$qualfile = $oqfile;
 
 # fix sequence name characters because raxmlHP is picky
 print "Checking input sequence names for \":\" characters...\n";
@@ -88,6 +149,8 @@ while(<SF>)
 print "Finished.\n";
 
 # -- designate positions to exclude from quality filtering
+# low diversity at these positions leads to falsely low quality scores, 
+# and we'll be checking for accuracy at those positions more directly anyway
 @excvec = qw{13 14 15 16 22 23 24};
 foreach $e (@excvec) {$exch{$e}++;}
 
@@ -174,9 +237,9 @@ $nmatches = `grep \">\" matches.fasta -c`;
 chomp($nmatches);
 print "Done filtering for site matches. $nmatches matches found.\n";
 
-# -- reset min cov for initial clustering at 1 read per 5 million
+# -- if VHQ sites coverage is high (> 10 million) enforce a minimum coverage setting of at least 1/5M reads
 $newmincov = int($nmatches/5000000+0.5);
-if ($newmincov > 2) {$mincov = $newmincov;}
+if ($newmincov > $mincov) {$mincov = $newmincov;}
 
 # -- this step identifies sequences observed repeatedly in the VHQ dataset
 # -- we call these "valid alleles"
@@ -332,7 +395,6 @@ foreach $c (sort(keys(%grah)))
 # among alleles to infer the number of loci in the cluster. 
 	if ($ncmems < $minmems)
 		{
-#		print $c, " not tested, too few sequences in the cluster.\n";
 # pick representative seq from this cluster and add it to reference as a single locus
 		$outh{$grareps{$c}}++;
 		if ($ncmems < 2) {$mono_loc++;}
@@ -343,7 +405,6 @@ foreach $c (sort(keys(%grah)))
 # repetitive cluster that we'd like to exclude because such loci will be error prone. 
 	if ($ncmems > $maxmems)
 		{
-#		print $c, " not tested, too many sequences in the cluster.\n";
 # pick representative seq from this cluster and add it to reference as a single locus
 		$outh{$grareps{$c}}++;
 		$poly_max++;
@@ -366,7 +427,6 @@ foreach $c (sort(keys(%grah)))
 			$_ =~ s/\s.*//;
 			if (exists($cih{$_}))
 				{
-#				print $_, "\n";
 				$outname = $_;
 				$outname =~ s/\:/-/g;
 				print TMP ">", $outname, "\n";
@@ -384,13 +444,12 @@ foreach $c (sort(keys(%grah)))
 		}
 	close(SEQ); close(TMP);
 
-# tree building code here
+# tree building code begins here
 # prepare for tree building
 	if(glob("*.tree"))	{system("rm *.tree");}
 	%cladeh = %deph = %blenh = ();
 
 # build tree describing relationships among members of the cluster
-#	RAXML:
 	$nseqs = `grep -c \">\" tmp.fasta`;
 	chomp($nseqs);
 	if ($nseqs ne 0) 
@@ -404,12 +463,6 @@ foreach $c (sort(keys(%grah)))
 		$treeobj = new Bio::TreeIO(-file=>"RAxML_bestTree.out.tree", -format=>"newick");
 		$tree = $treeobj->next_tree;
 		$rootnode = $tree->get_root_node;
-		}
-	else	{
-#		print STDERR "Tree not found. Re-building...\n";
-#		$coni = `cat tmp.fasta`;
-#		print STDERR $coni, "\n";
-#		goto RAXML;
 		}
 
 # store id, depth, and branch length for each node
@@ -442,7 +495,6 @@ foreach $c (sort(keys(%grah)))
 # represent a seperate locus
 		elsif ($deph{$tclade}>=$mindepth && $blenh{$tclade}>=$mindepth)
 			{
-#			print $tclade, "\t", $tha[0], "\t", $ntha, "\t", "@tha", "\n";
 			$outh{$tha[0]}++;
 			$tmpfateh{$tclade} = $tha[0];
 			}
@@ -470,9 +522,9 @@ system("date");
 print $mono_loc, " singleton clusters\n";
 print $poly_one, " clusters made of too few sequences to build useful trees\n";
 print $c4tree, " cluster with sufficient diversity to build trees\n";
-print $remainsingle, " clusters remained as individual loci after tree analysis\n";
-print $splitclust, " clusters were split into two or more loci\n";
-print "Those clusters were split into $newclust new clusters based on tree analysis.\n";
+print $remainsingle, " clusters lacked sub-clusters and remained together\n";
+print $splitclust, " clusters were split into two or more sub-clusters\n";
+print "Those clusters were split into $newclust sub-clusters.\n";
 
 @outlocs = sort(keys(%outh));
 $nout = @outlocs;

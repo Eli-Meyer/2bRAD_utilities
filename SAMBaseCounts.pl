@@ -6,25 +6,60 @@
 $scriptname=$0; $scriptname =~ s/.+\///g;
 $usage = <<USAGE;
 Counts nucleotide frequencies at each locus in a 2bRAD sequence data set.
-Usage: $scriptname input.sam reference.fasta cov_threshold output.tab
-Where:
-	input.sam:		input alignments, SAM format
-	reference.fasta:	reference used to generate the input alignments, FASTA format
-	cov_threshold:		loci with lower coverage are discarded
-	output.tab:		a name for the output file (tab delimited text)
+Usage: $scriptname -i input -r reference -o <OPTIONS>
+Required arguments:
+	-i input		input alignments, SAM format
+	-r reference		reference used to generate the input alignments, FASTA format
+	-o output		a name for the output file (tab delimited text)
+Options:
+	-c coverage		loci with lower coverage are discarded (default: 3)
 USAGE
-if ($#ARGV != 3 || $ARGV[0] eq "-h") {print "\n", $usage, "\n"; exit;}
+if ($#ARGV < 2 || $ARGV[0] eq "-h") {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
 
-# define variables from input arguments
-$infile = $ARGV[0];
-$ref = $ARGV[1];
-$thd = $ARGV[2];
-$outfile = $ARGV[3];
+# -- module and executable dependencies
+$mod1="Getopt::Std";
+unless(eval("require $mod1")) {print "$mod1 not found. Exiting\n"; exit;}
+use Getopt::Std;
 
-# define positions to be exluded from basecalling (recognition sites, which are invariant)
+# get variables from input
+getopts('i:r:o:c:h');	# in this example a is required, b is optional, h is help
+if (!$opt_i || !$opt_r || !$opt_o || $opt_h) {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
+if ($opt_c) {$thd = $opt_c;} else {$thd = 3;}	
+$infile = $opt_i;
+$reffile = $opt_r;
+$outfile = $opt_o;
+# load reference into memory
+system("date");
+print "beginning analysis of nucleotide frequencies in $infile...\n";
+print "Reading reference...\n";
+open(REF,$reffile);
+while(<REF>)
+	{
+	chomp;
+	if ($_ =~ /\>/)
+		{
+		$_ =~ s/\>//;
+		$refi = $_;
+		}
+	elsif ($_ =~ /[ACGT]/)
+		{
+		@bits = split("", $_);
+		$bcount = 0;
+		foreach $b (@bits)
+			{
+			$bcount++;
+			$rrh{$refi}{$bcount} = $b;
+			}
+		}
+	}
+close(REF);
+print "Finished loading reference. into memory.\n";
+
+# define positions to be ignored (recognition sites, which are invariant)
 foreach $p (13, 14, 15, 22, 23, 24) {$exch{$p}++;}		# for AlfI
 
 # read in sam file output line by line
+print "Reading alignments and counting nucleotides at each position...\n";
 open(IN, $infile);
 my %nfh;
 while(<IN>)
@@ -62,36 +97,26 @@ while(<IN>)
 			}
 		}
 
-# -- check which strand the read matches
-	$strand = 0;
-	if ($cols[1] eq 16)	{$strand = -1;}
-	else	{$strand = 1;}
-
 # -- count each base toward nucleotide frequencies at the corresponding reference position
 	@reada = split("",$cols[9]);
 
-#	print $cols[0], "\t", $cols[2], "\t", "$cig", "\t", $strand, "\n";
-#	print join("\t", @codea), "\n", join("\t", @reada), "\n";
-
 	if (@reada ne @codea) {print "Something is wrong.\n @reada \n @codea\n"; exit;}
-#	print "@reada", "\n";
 	$readpos = -1;
 	foreach $b (@reada)
 		{
 		$readpos++;
-#		print $readpos, "\t", $codea[$readpos], "\t", $b, "\n";
 		if ($codea[$readpos] eq 0) {next;}
 		if ($codea[$readpos] eq "") {next;}
 		$nfh{$cols[2]}{$codea[$readpos]}{$b}++;
-#		if ($strand eq 1) {$nfh{$cols[2]}{$codea[$readpos]}{$b}++;}
-#		elsif ($strand eq -1) {$nfh{$cols[2]}{$codea[$readpos]}{$rch{$b}}++;}
 		}
 	}
+print "Finished reading and counting alignments.\n";
 
 # -- write output, applying coverage threshold per locus
+print "Writing output...\n";
 open(OUT, ">$outfile");
-print OUT "\tTag\tLocus\tA\tC\tG\tT\tN\n";
-@nbins = qw{A C G T N};
+print OUT "Tag\tLocus\tRef\tA\tC\tG\tT\n";
+@nbins = qw{A C G T};
 $rownum = 0;
 foreach $ref (sort(keys(%nfh)))
 	{
@@ -107,7 +132,7 @@ foreach $ref (sort(keys(%nfh)))
 			}
 		if(exists($exch{$loc})) {next;}
 		if ($covi < $thd) {next;}
-		print OUT $rownum, "\t", $ref, "\t", $loc, "\t";
+		print OUT $ref, "\t", $loc, "\t", $rrh{$ref}{$loc}, "\t";
 		foreach $n (@nbins)
 			{
 			if (exists($loch{$n})) {print OUT $loch{$n}, "\t";}
@@ -116,3 +141,6 @@ foreach $ref (sort(keys(%nfh)))
 		print OUT "\n";
 		}
 	}
+print "Finished with analysis of nucleotide frequencies.\n";
+system("date");
+print "\n";

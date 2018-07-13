@@ -1,23 +1,33 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # written by E Meyer, eli.meyer@science.oregonstate.edu
 # distributed without any guarantees or restrictions
 
+# -- check arguments and print usage statement
 $scriptname=$0; $scriptname =~ s/.+\///g;
-if ($#ARGV != 0 || $ARGV[0] eq "-h") 
-	{
-	print "\nConverts a genotype matrix (loci x samples) to a snp matrix, as described in the manual\n";
-	print "for the R package diveRsity. This snp matrix can be converted to genepop format\n";
-	print "using diveRsity's snp2gen function.\n";
-	print "Usage: $scriptname input > output\n"; 
-	print "Where:\tinput:\ttab-delimited genotype matrix, with rows=loci and columns=samples.\n";
-	print "\t\tFirst two columns indicate tag and position respectively.\n";
-	print "\t\tThis format is the output from RADGenotyper.pl.\n";
-	print "\toutput:\ta name for the output file. SNP matrix format.\n\n";
-	exit;
-	}
+$usage = <<USAGE;
+Converts a genotype matrix (loci x samples) to a snp matrix, as described in the manual
+for the R package diveRsity. This snp matrix can be converted to genepop format
+using diveRsity's snp2gen function.
+Usage: $scriptname -i input -o output
+Required arguments:
+	-i input	tab-delimited genotype matrix, with rows=loci and columns=samples.
+                	First two columns indicate tag and position respectively.
+                	This format is the output from CallGenotypes.pl.
+	-o output	a name for the output file. SNP matrix format, input for snp2gen.
+USAGE
 
-open(IN, $ARGV[0]);
-open(KEY, ">$ARGV[0].snpkey");
+# -- module and executable dependencies
+$mod1="Getopt::Std";
+unless(eval("require $mod1")) {print "$mod1 not found. Exiting\n"; exit;}
+use Getopt::Std;
+
+# get variables from input
+getopts('i:o:h');	# in this example a is required, b is optional, h is help
+if (!$opt_i || !$opt_o || $opt_h) {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
+
+open(IN, $opt_i);
+open(KEY, ">snpkey.$opt_o");
+open(OUT, ">$opt_o");
 while(<IN>)
 	{
 	chomp;
@@ -27,28 +37,29 @@ while(<IN>)
 
 	if ($rowcount==1)
 		{
-		print "SNP_ID", "\t";
-		print join("\t", @cols[2..$nom]), "\n";
+		print OUT "SNP_ID", "\t";
+		print OUT join("\t", @cols[2..$nom]), "\n";
 		next;
 		}
 	$tagcount++;
-	print "SNP", $tagcount, "\t";
+	print OUT "SNP", $tagcount, "\t";
 	print KEY $tagcount, "\t", $cols[0], "\t", $cols[1], "\n";
 	for ($a=2; $a<$nom; $a++)
 		{
 		if ($cols[$a] =~ / /)
 			{
 			$cols[$a] =~ s/ //;
-			print $cols[$a], "\t";
+			print OUT $cols[$a], "\t";
 			}
 		elsif ($cols[$a] eq 0)
 			{
-			print "--", "\t";
+			print OUT "--", "\t";
 			}
 		else
 			{
-			print $cols[$a], $cols[$a], "\t";	
+			print OUT $cols[$a], $cols[$a], "\t";	
 			}
 		}
-	print "\n";
+	print OUT "\n";
 	}
+
