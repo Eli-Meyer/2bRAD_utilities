@@ -111,8 +111,8 @@
    If you get no feedback, you will need to download and install RAxML. Go to this
    <a href="http://sco.h-its.org/exelixis/web/software/raxml/cluster.html" title="Link to RAxML website">link</a> and follow the instructions on that site.<br>
    <li><b>BGC</b></li>
-   BGC is the Bayesian Genotype Caller developed by Maruki & Lynch (<a href="http://www.g3journal.org/content/7/5/1393.long">2017</a>).
-   these programs need to be installed and available if the user wishes to use BGC during genotype calling (optional). <br>
+   BGC is the Bayesian Genotype Caller, a collection of programs developed by Maruki & Lynch (<a href="http://www.g3journal.org/content/7/5/1393.long">2017</a>).
+   These programs need to be installed and available if the user wishes to use BGC during genotype calling (optional). <br>
    To check for the software on your system, run:<br>
    <code>which BGC</code><br>
    <code>which GFE</code><br>
@@ -122,7 +122,7 @@
    If any of these programs are unavailable, you will need to download and install them. Download the source files:<br>
    <a href="http://www.g3journal.org/highwire/filestream/473133/field_highwire_adjunct_files/0/FileS1.zip">FileS1</a>
    <a href="http://www.g3journal.org/highwire/filestream/473133/field_highwire_adjunct_files/0/FileS3.zip">FileS3</a>
-   <a href="http://www.g3journal.org/highwire/filestream/473133/field_highwire_adjunct_files/0/FileS5.zip">FileS5</a>
+   <a href="http://www.g3journal.org/highwire/filestream/473133/field_highwire_adjunct_files/0/FileS5.zip">FileS5</a><br>
    Then unzip the files and compile each one into an executable program, as e.g.<br>
     <code>g++ HGC.cpp -o HGC -lm</code>
    <br>
@@ -189,7 +189,7 @@
    <li><b>(Option 1) Extract AlfI sites from the genome assembly</b></li>
    For systems with a sequenced genome, this step is relatively straightforward. The AlfI sites (restriction fragments)
    are extracted from the genome assembly, as:<br>
-   <code>AlfIExtract.pl assembly.fasta output.fasta</code><br>
+   <code>ExtractSites.pl -i assembly.fasta -e AlfI -o output.fasta</code><br>
    This will produce a FASTA formatted reference containing all the AlfI sites in the target genome. The output will
    serve as your reference for all downstream analysis.<br>
    <li><b>(Option 2) Produce a de novo reference by clustering reads</b></li>
@@ -201,10 +201,8 @@
    <code>head -n 4000000 file2.fastq >> combined.fastq<br></code>
    <code>...<br></code>
    <code>head -n 4000000 fileN.fastq >> combined.fastq<br></code>
-   Next, convert the FASTQ file into FASTA as expected by the clustering software (cd-hit-est):<br>
-   <code>FastqToFasta.pl combined.fastq combined.fasta combined.qual</code><br>
-   Then develop a <i>de novo</i> reference by clustering these reads, using the BuildCDR.pl script as:<br>
-   <code>BuildRef.pl combined.fasta combined.qual reference.fasta</code><br>
+   Next, constrcut a <i>de novo</i> reference by clustering these reads, using the BuildRef.pl script as:<br>
+   <code>BuildRef.pl -i combined.fastq -o reference.fasta</code><br>
    This example produces a FASTA file called "reference.fasta" that will serve as your reference for all downstream analysis.<br>
    </p></ul>
    </div>
