@@ -229,9 +229,8 @@
    The raw alignments may include weak and ambiguous alignments (i.e. cases where a single read matches equally well
    to two or more regions of the genome). To remove these:<br>
    <code>SAMFilter.pl -i gmapper.sam -m 32 -o filtered.sam</code><br>
-   In this example, we chose to exclude any alignments spanning less than 32 bp and any alignments having fewer than
-   30 matching bp. Ambiguous matches are also eliminated by default. The alignments passing this filter are written to
-   an output file called "filtered.sam".<br>
+   In this example, we chose to exclude any alignments having fewer than 32 matching bp. Ambiguous matches are also eliminated 
+   by default. The alignments passing this filter are written to an output file called "filtered.sam".<br>
    </ul>
    </div>
   </div>
@@ -264,8 +263,40 @@
    The output is written to a file named "combined.tab".<br>
     
    <li><b>Determine genotypes from nucleotide frequencies</b></li>
-   <p>Finally, to determine the genotype at each position, we consider the allele frequencies at each locus and call the genotype
-   as either homozygous for the major allele, heterozygous for the two observed alleles, or unknown (for cases of intermediate
+   <p>Finally, we determine genotype at each position in each sample, based on nucleotide frequencies in that sample and in the
+   population. Our script includes several options:
+   <ul>
+    <li>Nucleotide frequencies (-m nf). This method is the default. These simple rules for genotyping were originally described in the 
+    2bRAD method paper (Wang et al. 2012), and have been repeatedly validated. This approach operates directly on allele counts:
+    <ul>
+     <li>If one allele accounts for ≥99% of read depth, the genotype is called homozygous for that allele</li>
+     <li>If a second allele accounts for ≥25% of read depth, the genotype is called heterozygous</li>
+     <li>If a second allele is present at >1% and <25%, or if total depth is below a chosen threshold, or if a third allele is present
+         at more than 1% of read depth, then the genotype is not called. </li>
+    </ul>
+    </li>
+    <li>Population genotype frequencies (-m pgf). In this simple addition to the original nucleotide frequency rules, frequencies of 
+     each genotype are first compared across the population to identify the valid alleles to be expected in each sample. This allows 
+     identification of additional heterozygous genotypes where the expected minor allele (based on population genotype frequencies) 
+     occurs at a lower frequency threshold (default: ≥5%).
+    </li>
+    <li>Bayesian Genotype Caller (-m bgc). This option calls software developed by Maruki & Lynch (2017) [doi: 10.1534/g3.117.039008]. 
+     The software implements maximum-likelihood (ML) methods for calling genotypes from high-throughput sequencing data. 
+     Population-level information on genotype frequencies and error rates (pre-estimated by an ML method) is incorporated in 
+     genotyping decisions. 
+     <ul>
+      <li>Using the GFE program, ML estimates are obtained for the allele frequencies, error rates, and disequilibrium/inbreeding 
+       coefficients. From these, the program also estimates genotype frequencies in the population.
+      </li>
+      <li>Using the BGC and HGC programs for low and high coverage loci respectively, genotypes are determined at each locus in each 
+       sample, based on nucleotide counts and incorporating the genotype-frequency and sequencing-error rate estimates predetermined by 
+       an ML genotype frequency estimator (GFE). 
+      </li>
+      </ul>
+      </li>
+    </ul>
+  
+     as either homozygous for the major allele, heterozygous for the two observed alleles, or unknown (for cases of intermediate
    allele frequencies that can't be accurately determined). This can be accomplished using NFGenotyper.pl, as:<br>
    <code>NFGenotyper.pl basecalls.tab 0.01 0.25 20 > genotypes.tab</code><br>
    In this example, we've read an input file called "basecalls.tab" and applied the following nucleotide frequency thresholds.
