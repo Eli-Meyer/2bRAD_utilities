@@ -1,6 +1,6 @@
 A collection of scripts for analysis of 2bRAD sequence data. 
 
-For instructions, see the User's Guide at http://eli-meyer.github.io/2brad_utilities
+For instructions, see the User's Guide at http://eli-meyer.github.io/2bRAD_utilities
 
 -------------------------
 AlleleFilter.pl
