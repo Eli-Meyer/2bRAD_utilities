@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html>
+ <head>
+ <title>User's Guide - 2bRAD utilities</title>
+ <link rel="stylesheet" type="text/css" href="style/docs_style.css">
+ <style type="text/css">
+ .row { vertical-align: top; height:auto !important; }
+ .list {display:none; }
+ .show {display: none; }
+ .hide:target + .show {display: inline; }
+ .hide:target {display: none; }
+ .hide:target ~ .list {display:inline; }
+ @media print { .hide, .show { display: none; } }
+ </style>
+<h2>
+ <a href="http://people.oregonstate.edu/~meyere/tools.html" title="Back to Tools page"
+  style="text-decoration: none; color: black; margin-left: 2%;">Tools | </a>
+ <a href="#top" title="Collapse all menus" style="text-decoration: none; color: black;">Analysis of genetic variation using 2bRAD utilities (v3.0)</a>
+ </h2>
+ <hr align="left" style="margin-left: 2%;">
+ </head>
+
+ <body>
+  <div class="row" style="font-size: 90%;">
+  <a href="#about" class="hide" id="about" style="text-decoration: none; color: black; margin-left: 2%">
+   <span title="Click to expand">
+   About this guide</span></a>
+  <a href="#top" class="show" id="top" style="text-decoration: none; color: blue; margin-left: 2%">
+   <span title="Click to collapse">
+   About this guide</span></a>
+   <div class="list">
+   <p align="left" style="margin-left: 2%">This page outlines our standard pipeline for analysis of genetic variation using 2bRAD, a cost-effective and flexible
+   sequencing-based approach for SNP genotyping. This guide covers the most recently updated version of the 2bRAD utilities pipeline as of July 2018 (v3.0).<br><br>
+   These tools are intended to be used on a high-performance computing cluster, and assume a basic knowledge of Linux and command-line
+   tools. To analyze large numbers of samples in parallel, the user will probably want to (a) combine some of the
+   following steps into shell scripts, and (b) submit each job to a job scheduler such as SGE. Since the details of
+   those steps may vary from one cluster to another, we have left those details up to the end user.<br><br>
+   Click on each header to expand or collapse that section.
+   </p>
+   </div>
+  <br>
+  </div>
+  <div class="row">
+  <a href="#install" class="hide" id="install" style="text-decoration: none; color: black; margin-left: 2%; font-size:14pt">
+   <b><span title="Click to expand">
+   &#9655 Download scripts and install required software</span></b></a>
+  <a href="#top" class="show" id="top" style="text-decoration: none; color: blue; margin-left: 2%; font-size:14pt">
+   <b><span title="Click to collapse">
+   &#9665 Download scripts and install required software</span></b></a>
+   <div class="list">
+   <ul>
+   <li><b>BioPerl</b></li>
+    <p>Our scripts rely on BioPerl modules. First, check whether you need to install BioPerl. <br>
+    <code>
+    perl -MBio::SeqIO -e 0 <br>
+    </code>
+    If you get no feedback, BioPerl is available on your system. If you get an error message something like the following:<br>
+    <code>
+    Can't locate Bio/SeqIO.pm in @INC (@INC contains: /etc/perl /usr/local/lib/perl/5.14.2 ...    <br>
+    </code>
+    this indicates that you need to install BioPerl. <br><br>
+    To install BioPerl, go to <a href="http://www.bioperl.org/wiki/Getting_BioPerl" title="Link to BioPerl website">the BioPerl Wiki</a> and follow the instructions given there. <br>
+    </p>
+   <li><b>Scripts</b></li>
+   <p>Our scripts for 2bRAD analysis are hosted on GitHub. You'll want to download scripts from this repository:
+   <ol>
+    <li><a href="https://github.com/Eli-Meyer/2brad_utilities/" title="Link to GitHub repository">Scripts specifically for 2bRAD analysis.<a></li>
+   </ol>
+   <br>The best way to do this is to use the <i>git</i> tool. While this is undoubtedly the best and most widely-used platform<br>
+   for sharing code, the git tool itself is not simple or intuitive. To learn about use of git, we recommend
+   <a href="http://gitref.org/" title="Link to GitRef website">this resource</a>.<br>
+   To download the above repositories onto your system, assuming <i>git</i> is available:<br>
+   <code>git clone git://github.com/Eli-Meyer/2bRAD_utilities.git<br></code>
+   Make sure you have execute permission to these scripts, and that they are in your path ($PATH).<br>
+   </p>
+   <li><b>bbduk.sh</b></li>
+   <p>To check whether bbduk is installed on your system, run:<br>
+   <code>which bbduk.sh</code><br>
+   If you get no feedback, this indicates you need to install bbduk. Go to this
+   <a href="https://sourceforge.net/projects/bbmap/" title="Link to bbmap website">link</a>
+   and follow the instructions to unpack this collection of software, which requires Java version 6 or higher is installed on your system. <br>
+   If you get feedback similar to this:<br>
+   <code>/local/cluster/bbmap/bbduk.sh</code><br>
+   This indicates bbduk is already installed and in your path. You can move on to the next step.<br>
+   </p>
+   <li><b>SHRiMP</b></li>
+   <p>To check whether SHRiMP is installed on your system, run:<br>
+   <code>which gmapper</code><br>
+   If you get no feedback, this indicates you need to install SHRiMP. Go to this
+   <a href="http://compbio.cs.toronto.edu/shrimp/" title="Link to SHRiMP website">link</a>
+   and download and install SHRiMP according to the directions on that site.<br>
+   If you get feedback similar to this:<br>
+   <code>/local/cluster/SHRiMP/bin/gmapper</code><br>
+   This indicates SHRiMP is already installed and in your path. You can move on to the next step.<br>
+   </p>
+   <li><b>CD-HIT</b></li>
+   CD-HIT is software for clustering sequences, used in our pipeline for de novo analysis of species
+   lacking a sequenced genome. To check for the software on your system, run:<br>
+   <code>which cd-hit-est</code><br>
+   If you get feedback similar to this, CD-HIT is available on your system:<br>
+   <code>/local/cluster/cd-hit/cd-hit-est</code><br>
+   If you get no feedback, you will need to download and install CD-HIT. Go to this
+   <a href="http://weizhongli-lab.org/cd-hit/" title="Link to CD-HIT website">link</a> and follow the instructions on that site.<br>
+   <br>
+   <li><b>RAxML</b></li>
+   RAxML is a maximum likelihood tool for phylogenetic analysis, used in our de novo analysis to
+   differentiate between similar loci. To check for the software on your system, run:<br>
+   <code>which raxmlHPC</code><br>
+   If you get feedback similar to this, RAxML is available on your system:<br>
+   <code>/local/cluster/RAxML/bin/raxmlHPC</code><br>
+   If you get no feedback, you will need to download and install RAxML. Go to this
+   <a href="http://sco.h-its.org/exelixis/web/software/raxml/cluster.html" title="Link to RAxML website">link</a> and follow the instructions on that site.<br>
+   <li><b>BGC</b></li>
+   BGC is the Bayesian Genotype Caller, a collection of programs developed by Maruki & Lynch (<a href="http://www.g3journal.org/content/7/5/1393.long">2017</a>).
+   These programs need to be installed and available if the user wishes to use BGC during genotype calling (optional). <br>
+   To check for the software on your system, run:<br>
+   <code>which BGC</code><br>
+   <code>which GFE</code><br>
+   <code>which HGC</code><br>
+   If you get feedback similar to this, BGC is available on your system:<br>
+   <code>/local/cluster/BGC</code><br>
+   If any of these programs are unavailable, you will need to download and install them. Download the source files:<br>
+   <a href="http://www.g3journal.org/highwire/filestream/473133/field_highwire_adjunct_files/0/FileS1.zip">FileS1</a>
+   <a href="http://www.g3journal.org/highwire/filestream/473133/field_highwire_adjunct_files/0/FileS3.zip">FileS3</a>
+   <a href="http://www.g3journal.org/highwire/filestream/473133/field_highwire_adjunct_files/0/FileS5.zip">FileS5</a><br>
+   Then unzip the files and compile each one into an executable program, as e.g.<br>
+    <code>g++ HGC.cpp -o HGC -lm</code>
+   <br>
+   </ul>
+   </div>
+  </div>
+
+  <div class="row"><br>
+  <a href="#process" class="hide" id="process" style="text-decoration: none; color: black; margin-left: 2%; font-size:14pt">
+   <span title="Click to expand">
+   <b>&#9655 Trim and filter reads</b></span></a>
+  <a href="#top" class="show" id="top" style="text-decoration: none; color: blue; margin-left: 2%; font-size:14pt">
+   <span title="Click to collapse">
+   <b>&#9665 Trim and filter reads</b></span></a>
+   <div class="list">
+   <ul>
+   <li><b>Truncate</b></li>
+   <p>Since AlfI produces uniform 36-bp restriction fragments, we first truncate sequences to keep only
+   the inserts derived from these fragments. This can be accomplished by running:<br>
+   <code>TruncateFastq.pl -i input.fastq -s 1 -e 36 -o output.fastq</code><br>
+   to read "input.fastq", trim away the sequences after 36 bp, and write the output to a file called "output.fastq".<br>
+   To read instructions for any of the scripts described here, run the script with no arguments. e.g. :<br>
+   <code>TruncateFastq.pl</code><br>
+   </p>
+
+   <li><b>Quality Filter</b></li>
+   <p>Next, we exclude low quality reads that might introduce errors in genotyping. The choice of thresholds is
+   somewhat arbitrary and ultimately up to the user. For an example using reasonable default settings, run:<br>
+   <code>QualFilterFastq.pl -i input.fastq -m 20 -x 5 -o output.fastq</code><br>
+   to remove any reads from "input.fastq" having more than 5 bases with quality scores lower than 20, and write
+   the output to a file named "output.fastq".<br>
+   </p>
+   <li><b>Adaptor filter</b></li>
+   <p>
+   Finally, the most computationally intensive task. The artificial DNA sequences introduced during
+   library preparation may occupy unknown portions of the read (including the entire read). Removing
+   these is probably the most important task in read processing, and certainly the most
+   computationally intensive. To make the whole pipeline easier to run in parallel, we've recently
+   switched from the old version (AdaptorFilterFastq.pl) to a newer kmer-based tool
+   called <a href="http://jgi.doe.gov/data-and-tools/bbtools/bb-tools-user-guide/bbduk-guide"
+   title="Documentation for BBDUK">BBDUK<a/>. </br>
+
+   This has superior performance in all respects to the old process and most importantly, can be run
+   directly on large sequence datasets without lots of tedious parallelizing.<br><br>
+
+   To run this tool on a set of reads called input.fastq, to eliminate any reads sharing at least
+   one 12-mer with sequences in adaptors.fasta, we can run:<br>
+   <code>bbduk.sh in=hrf.fastq ref=adaptors.fasta k=12 stats=stats.txt out=clean.fastq</code><br>
+   to remove any reads in "input.fastq" having valid alignments (at least one 12-bp kmer match)
+   to sequences in "adaptors.fasta", and write the output (sequences passing the filter) to "output.fastq".<br>
+   </ul>
+   </div>
+  </div>
+
+  <div class="row"><br>
+  <a href="#reference" class="hide" id="reference" style="text-decoration: none; color: black; margin-left: 2%; font-size:14pt">
+   <span title="Click to expand">
+   <b>&#9655 Prepare reference</b></span></a>
+  <a href="#top" class="show" id="top" style="text-decoration: none; color: blue; margin-left: 2%; font-size:14pt">
+   <span title="Click to collapse">
+   <b>&#9665 Prepare reference</b></span></a>
+   <div class="list">
+   <ul>
+   <li><b>(Option 1) Extract AlfI sites from the genome assembly</b></li>
+   For systems with a sequenced genome, this step is relatively straightforward. The AlfI sites (restriction fragments)
+   are extracted from the genome assembly, as:<br>
+   <code>ExtractSites.pl -i assembly.fasta -e AlfI -o output.fasta</code><br>
+   This will produce a FASTA formatted reference containing all the AlfI sites in the target genome. The output will
+   serve as your reference for all downstream analysis.<br>
+   <li><b>(Option 2) Produce a de novo reference by clustering reads</b></li>
+   Alternatively, for species lacking a sequenced genome, the reference is produced <i>de novo</i> by clustering reads.
+   This can be accomplished using the BuildCDR.pl script. First, combine subsets of trimmed and filtered reads from
+   all (or a representative subset) of your samples to produce a combined dataset of 10-20 million reads. This can
+   be easily accomplished using <i>head</i> as:<br>
+   <code>head -n 4000000 file1.fastq >> combined.fastq<br></code>
+   <code>head -n 4000000 file2.fastq >> combined.fastq<br></code>
+   <code>...<br></code>
+   <code>head -n 4000000 fileN.fastq >> combined.fastq<br></code>
+   Next, constrcut a <i>de novo</i> reference by clustering these reads, using the BuildRef.pl script as:<br>
+   <code>BuildRef.pl -i combined.fastq -o reference.fasta</code><br>
+   This example produces a FASTA file called "reference.fasta" that will serve as your reference for all downstream analysis.<br>
+   </p></ul>
+   </div>
+  </div>
+
+  <div class="row"><br>
+  <a href="#align" class="hide" id="align" style="text-decoration: none; color: black; margin-left: 2%; font-size:14pt">
+   <span title="Click to expand">
+   <b>&#9655 Align reads against reference</b></span></a>
+  <a href="#top" class="show" id="top" style="text-decoration: none; color: blue; margin-left: 2%; font-size:14pt">
+   <span title="Click to collapse">
+   <b>&#9665 Align reads against reference</b></span></a>
+   <div class="list">
+   <ul>
+   <li><b>Align reads to reference</b></li>
+   <p>We recommend the SHRiMP software package, which is both faster and more sensitive in our testing than
+   any other mapping software currently available. However, in principle another mapping program can be substituted
+   at this step, as long as the output is in SAM format and includes positive alignment scores in the "AS:" field.
+   To use SHRiMP, run the <i>gmapper</i> tool, as:<br>
+   <code>gmapper --qv-offset 33 -Q --strata -o 3 -N 1 reads.fastq reference.fasta >gmapper.sam</code><br>
+   In this example, a set of trimmed and filtered reads ("reads.fastq") is mapped against a reference sequence ("reference.fasta")
+   using a single thread (processor). The raw alignments are written to a file called "gmapper.sam". <br>
+   <li><b>Filter alignments</b></li>
+   The raw alignments may include weak and ambiguous alignments (i.e. cases where a single read matches equally well
+   to two or more regions of the genome). To remove these:<br>
+   <code>SAMFilter.pl -i gmapper.sam -m 32 -o filtered.sam</code><br>
+   In this example, we chose to exclude any alignments having fewer than 32 matching bp. Ambiguous matches are also eliminated 
+   by default. The alignments passing this filter are written to an output file called "filtered.sam".<br>
+   </ul>
+   </div>
+  </div>
+
+  <div class="row"><br>
+  <a href="#genotype" class="hide" id="genotype" style="text-decoration: none; color: black; margin-left: 2%; font-size:14pt">
+   <span title="Click to expand">
+   <b>&#9655 Determine genotypes from alignments</b></span></a>
+  <a href="#top" class="show" id="top" style="text-decoration: none; color: blue; margin-left: 2%; font-size:14pt">
+   <span title="Click to collapse">
+   <b>&#9665 Determine genotypes from alignments</b></span></a>
+   <div class="list">
+   <ul>
+
+   <li><b>Count nucleotide frequencies</b></li>
+   <p>First, we parse the alignments to record the nucleotides observed at each position in each reference sequence.
+   This can be accomplished using the SAMBaseCounts.pl script, as:<br>
+   <code>SAMBaseCounts.pl -i filtered.sam -r reference.fasta -5 -o base_counts.tab</code><br>
+   <p>In this example, the reference is "reference.fasta", the alignments to be parsed are in "filtered.sam",
+   and we've chosen a minimum coverage of 5 (i.e. loci covered by < 5 reads will be ignored). The output is
+   written to a tab-delimited text file called "base_counts.tab".</p>
+
+   <li><b>Combine base counts from multiple samples prior to calling genotypes</b></li>
+   <p>Because some of the genotyping methods require population information, we combine the nucleotide counts prior to 
+   determining genotypes. This can be accomplished using the script CombineBaseCounts.pl, as:<br>
+   <code>CombineBaseCounts.pl sample1/genotypes.tab sample2/genotypes.tab ... sampleN/genotypes.tab >combined.tab</code><br>
+   In this example, we are combining files called "genotypes.tab", for each sample ("sample1", "sample2", etc.
+   up to sampleN). Depending on your sample names and directory structure, this may be easily accomplished with wildcards:<br>
+   <code>CombineBaseCounts.pl sample*/genotypes.tab >combined.tab</code><br>
+   The output is written to a file named "combined.tab".<br>
+    
+   <li><b>Determine genotypes from nucleotide frequencies</b></li>
+   <p>Finally, we determine genotype at each position in each sample, based on nucleotide frequencies in that sample and in the
+   population. Our script CallGenotypes.pl includes several options:
+   <ul>
+    <li>Nucleotide frequencies (-m nf). This method is the default. These simple rules for genotyping were originally described in the 
+    2bRAD method paper (Wang et al. 2012), and have been repeatedly validated. This approach operates directly on allele counts:
+    <ul>
+     <li>If one allele accounts for ≥99% of read depth, the genotype is called homozygous for that allele</li>
+     <li>If a second allele accounts for ≥25% of read depth, the genotype is called heterozygous</li>
+     <li>If a second allele is present at >1% and <25%, or if total depth is below a chosen threshold, or if a third allele is present
+         at more than 1% of read depth, then the genotype is not called. </li>
+    </ul>
+    </li>
+    <li>Population genotype frequencies (-m pgf). In this simple addition to the original nucleotide frequency rules, frequencies of 
+     each genotype are first compared across the population to identify the valid alleles to be expected in each sample. This allows 
+     identification of additional heterozygous genotypes where the expected minor allele (based on population genotype frequencies) 
+     occurs at a lower frequency threshold (default: ≥5%).
+    </li>
+    <li>Bayesian Genotype Caller (-m bgc). This option calls software developed by Maruki & Lynch (2017) [doi: 10.1534/g3.117.039008]. 
+     The software implements maximum-likelihood (ML) methods for calling genotypes from high-throughput sequencing data. 
+     Population-level information on genotype frequencies and error rates (pre-estimated by an ML method) is incorporated in 
+     genotyping decisions. 
+     <ul>
+      <li>Using the GFE program, ML estimates are obtained for the allele frequencies, error rates, and disequilibrium/inbreeding 
+       coefficients. From these, the program also estimates genotype frequencies in the population.
+      </li>
+      <li>Using the BGC and HGC programs for low and high coverage loci respectively, genotypes are determined at each locus in each 
+       sample, based on nucleotide counts and incorporating the genotype-frequency and sequencing-error rate estimates predetermined by 
+       an ML genotype frequency estimator (GFE). 
+      </li>
+      </ul>
+      </li>
+    </ul>
+   Run the script with no arguments to learn the options:<br>
+    <code>CallGenotypes.pl</code><br>
+   Then run the script with appropriate settings as e.g.:<br>
+    <code>CallGenotypes.pl -i combined.tab -o genotypes.tab -c 10</code><br>
+    </ul>
+   </div>
+  </div>
+
+  <div class="row"><br>
+  <a href="#filter" class="hide" id="filter" style="text-decoration: none; color: black; margin-left: 2%; font-size:14pt">
+   <span title="Click to expand">
+   <b>&#9655 Filter genotypes</b></span></a>
+  <a href="#top" class="show" id="top" style="text-decoration: none; color: blue; margin-left: 2%; font-size:14pt">
+   <span title="Click to collapse">
+   <b>&#9665 Filter genotypes</b></span></a>
+   <div class="list">
+   <ul>
+
+   <li><b>Filter to select polymorphic loci (SNPs)</b></li>
+   <p>Typically we are only interested in polymorphic loci (SNPs). We apply this filter first, since most
+   loci are monomorphic and excluding them  will greatly reduce file sizes. This is accomplished by running
+   the following script:<br>
+   <code>PolyFilter.pl -i combined.tab -n 2 -p y -o snps.tab</code><br>
+   In this example, we selected all loci at which 2 or more genotypes were observed, writing them to a file called "snps.tab".
+   The choice of "y" for the print option indicates that we want the script to write the selected loci to
+   a file. Choosing "n" instead (the default) would only report the number of loci passing the filter, without writing those
+   genotypes to output.<br>
+   Note that this script can also be used to filter out loci at which the minor allele is only present in a small number of
+   individuals (e.g. alleles found in only a single individual). See the -v and -s options for more details.
+    </p>
+
+   <li><b>Filter to exclude low-coverage samples</b></li>
+   <p>If a few samples are sequenced at lower depth than the others, they increase the total amount of missing data
+   with little benefit. This script excludes samples for which too few genotypes were determined. Run the following:<br>
+   <code>LowcovSampleFilter.pl -i snps.tab -n 1000</code><br>
+   In this example, we have chosen to count the number of samples for which at least 1000 loci were genotyped. It's
+   generally a good idea to first explore a variety of thresholds, to evaluate whether there are a few samples with
+   substantially more missing data than others. e.g. if gradually increasing the thresholds eliminates a small number
+   of samples at a low threshold, then no further samples are eliminated as the threshold continues to increase, this
+   indicates a few samples are contributing disproportionately more to the overall missing data and should be excluded.
+   Once you've determined the threshold that best balances sample numbers and missing data, extract those loci as e.g.:<br>
+   <code>LowcovSampleFilter.pl -i snps.tab -n 2200 -p y -o samplefiltered.tab</code><br>
+   (In this example, we've chosen to write all samples with at least 2200 SNPs genotyped to a file named
+   "samplefiltered.tab")<br></p>
+
+   <li><b>Filter to exclude low-coverage loci</b></li>
+   <p>While the previous step excluded samples (columns) genotyped in too few loci, this step excludes loci (rows)
+   genotyped in too few samples to be informative. This is accomplished as:<br>
+   <code>MDFilter.pl -i samplefiltered.tab -n 40</code><br>
+   Again, its useful to first explore the effects of a variety of thresholds to identify a threshold that achieves
+   a good balance between the number of loci and the proportion of missing data. Once you've identified a threshold,
+   run the following:<br>
+   <code>MDFilter.pl -i samplefiltered.tab -n 45 -p y -o mdfiltered.tab</code><br>
+   In this example, we've chosen to write all loci genotyped in at least 45 samples to a file named "mdfiltered.tab".<br>
+   </p>
+
+   <li><b>Filter to exclude repetitive sites</b></li>
+   <p>Repetitive sequences can introduce error into any sequencing-based genotyping method, including 2bRAD. Since
+   reads cannot be uniquely assigned to one of these loci over the others, this is less of a problem for systems with
+   a sequenced genome (the unique mapping requirement effectively removes these loci when filtering alignments). For
+   <i>de novo</i> analysis, or systems with imperfect genome assemblies, it can be useful to explicitly filter out these
+   sites at this stage. <br>
+   The independent accumulation of SNPs at multiple loci, and their subsequent mapping back to a single reference sequence,
+   can be expected to produce sites with unusually high numbers of SNPs. These are excluded to guard against errors
+   resulting from repetitive sites. This is accomplished as:<br>
+   <code>RepTagFilter.pl -i mdfiltered.tab -n 2</code><br>
+   In this example, we've chosen to count the number of sites bearing no more than 2 SNPs. Once you've determined
+   which threshold to use, you can write the results to a file as:<br>
+   <code>RepTagFilter.pl -i mdfiltered.tab -n 2 -p y -o nr.tab</code><br>
+   </p>
+
+   <li><b>Select one SNP per tag</b></li>
+   <p>Since multiple SNPs on a single tag (AlfI restriction site) are unlikely to be separated by recombination,
+   they can usually be expected to segregate as a single locus. For many analyses its appropriate to remove these
+   redundant SNPs prior to analysis. This can be accomplished as:<br>
+   <code>OneSNPPerTag.pl -i nr.tab -p y -o selected_snps.tab</code><br>
+   For any sites having multiple SNPs, this script selects the SNP with the least missing data and write the output
+   to a file; in this example, named "selected_snps.tab".
+   <br><br>This output constitutes the endpoint of the standard 2bRAD analysis pipeline. The next steps depend on the study
+   and the biological question, and are up to the end user. This output file is simple, tab-delimited text that can
+   be easily read in commonly used software e.g. R or Microsoft Excel.</p>
+   </ul>
+   </div>
+  </div>
+
+ <hr align="left" style="margin-left: 2%;">
+  <p style="margin-left: 2%; font-size: 85%;">Last updated 14 July 2018, E. Meyer.</p>
+
+ </body>
+</html>
