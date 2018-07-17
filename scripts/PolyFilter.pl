@@ -11,7 +11,7 @@ Required arguments:
 	-i input	name of the input file, a matrix of genotypes or allele counts
 			(see -m for format)
 Options:
-	-g genotypes	minimum number of unique genotypes (for -m g) or alleles (for -m a) 
+	-n genotypes	minimum number of unique genotypes (for -m g) or alleles (for -m a) 
 			required to consider a locus polymorphic (default=2)
 	-m mode		g=genotypes (default). 
 			  Input file contains genotypes from individuals.
@@ -27,7 +27,7 @@ Options:
 			  (major then minor) for each sample
 	-v min_cov	(for -m a) minimum coverage required to consider an allele present
 			(default=2)
-	-s min_samp	minimum number of samples in which an allele must be present
+	-s min_samp	minimum number of samples in which an allele must be present to be counted.
 			(default=1)
 	-p option	y=print filtered loci and summary; n=only print summary
 			(default=n)
@@ -41,22 +41,21 @@ unless(eval("require $mod1")) {print "$mod1 not found. Exiting\n"; exit;}
 use Getopt::Std;
 
 # get variables from input
-getopts('i:o:n:p:m:h');	# in this example a is required, b is optional, h is help
-if (!$opt_i || !$opt_n || $opt_h) {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
+getopts('i:o:n:p:s:v:m:h');	# in this example a is required, b is optional, h is help
+if (!$opt_i || $opt_h) {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
+if ($opt_n) {$minall = $opt_n;} else {$minall = 2;}	# min genotypes or alleles to consider polymorphic
 if ($opt_p) {$pvar = $opt_p;} else {$pvar = "n";}	# whether to print loci passing filter
 if ($pvar eq "y" && !$opt_o) {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
 if ($opt_o) {$ovar = $opt_o;} else {$ovar = "null";}	# name for output file
 if ($opt_m) {$mode = $opt_m;} else {$mode = "g";}	# mode
 if ($mode ne "g" && $mode ne "a") {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
-if ($opt_v) {$minall = $opt_v;} else {$minall = 2;}	# min cov, for -m a
+if ($opt_v) {$mincov = $opt_v;} else {$mincov = 2;}	# min cov, for -m a
 if ($opt_s) {$minfreq = $opt_s;} else {$minfreq = 1;}	# min samps, for -m a
 my $opt = $pvar;
 
 # mode g
 if ($mode eq "g")
 {
-my $minall = $gvar;
-
 open(IN, $opt_i);
 open(OUT, ">$ovar");
 while(<IN>)
@@ -77,10 +76,10 @@ while(<IN>)
 	$passno = 0;
 	foreach $z (@alla)
 		{
-		if ($ahi{$z} >= $minsamp) {$passno++;}
+		if ($ahi{$z} >= $minfreq) {$passno++;}
 		}
 	$nalla = @alla;
-	if ($passno < $minsamp) {$nopoly++; next;}
+	if ($passno < $minall) {$nopoly++; next;}
 	if ($opt eq "y") {print OUT $_, "\n";}
 	}
 close(IN); close(OUT);
@@ -106,7 +105,7 @@ while(<IN>)
 		{
 		if ($cols[$a] eq "NA") {next;}
 		$gt_no++;
-		if ($cols[$a+1] >= $minall) 
+		if ($cols[$a+1] >= $mincov) 
 			{
 			$alt_no++;
 			}
