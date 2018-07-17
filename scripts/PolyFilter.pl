@@ -85,7 +85,7 @@ while(<IN>)
 close(IN); close(OUT);
 print STDERR $rowcount-1, " loci in input file\n";
 print STDERR $nopoly, " loci with fewer than ", $minall, " genotypes\n";
-print STDERR $rowcount-1-$nopoly, " polymorphic loci (at least ", $minall, " genotypes in $minsamp or more samples)\n";
+print STDERR $rowcount-1-$nopoly, " polymorphic loci (at least ", $minall, " genotypes in $minfreq or more samples)\n";
 }
 
 # mode a
