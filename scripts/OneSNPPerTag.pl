@@ -38,7 +38,7 @@ use Getopt::Std;
 
 # get variables from input
 getopts('i:o:p:m:h');	# in this example a is required, b is optional, h is help
-if (!$opt_i || !$opt_n || $opt_h) {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
+if (!$opt_i || $opt_h) {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
 if ($opt_p) {$pvar = $opt_p;} else {$pvar = "n";}	# whether to print loci passing filter
 if ($pvar eq "y" && !$opt_o) {print "\n", "-"x60, "\n", $scriptname, "\n", $usage, "-"x60, "\n\n"; exit;}
 if ($opt_o) {$ovar = $opt_o;} else {$ovar = "null";}	# name for output file
