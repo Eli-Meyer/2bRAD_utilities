@@ -248,18 +248,18 @@
    <li><b>Count nucleotide frequencies</b></li>
    <p>First, we parse the alignments to record the nucleotides observed at each position in each reference sequence.
    This can be accomplished using the SAMBaseCounts.pl script, as:<br>
-   <code>SAMBaseCounts.pl -i filtered.sam -r reference.fasta -5 -o base_counts.tab</code><br>
+   <code>SAMBaseCounts.pl -i filtered.sam -r reference.fasta -c 5 -o base_counts.tab</code><br>
    <p>In this example, the reference is "reference.fasta", the alignments to be parsed are in "filtered.sam",
    and we've chosen a minimum coverage of 5 (i.e. loci covered by < 5 reads will be ignored). The output is
    written to a tab-delimited text file called "base_counts.tab".</p>
 
    <li><b>Combine base counts from multiple samples prior to calling genotypes</b></li>
-   <p>Because some of the genotyping methods require population information, we combine the nucleotide counts prior to 
+   <p>Because some of the genotyping methods require population information, we combine the nucleotide counts from all samples prior to 
    determining genotypes. This can be accomplished using the script CombineBaseCounts.pl, as:<br>
-   <code>CombineBaseCounts.pl sample1/genotypes.tab sample2/genotypes.tab ... sampleN/genotypes.tab >combined.tab</code><br>
-   In this example, we are combining files called "genotypes.tab", for each sample ("sample1", "sample2", etc.
+   <code>CombineBaseCounts.pl sample1/base_counts.tab sample2/base_counts.tab ... sampleN/base_counts.tab >combined.tab</code><br>
+   In this example, we are combining files called "base_counts.tab", for each sample ("sample1", "sample2", etc.
    up to sampleN). Depending on your sample names and directory structure, this may be easily accomplished with wildcards:<br>
-   <code>CombineBaseCounts.pl sample*/genotypes.tab >combined.tab</code><br>
+   <code>CombineBaseCounts.pl sample*/base_counts.tab >combined.tab</code><br>
    The output is written to a file named "combined.tab".<br>
     
    <li><b>Determine genotypes from nucleotide frequencies</b></li>
